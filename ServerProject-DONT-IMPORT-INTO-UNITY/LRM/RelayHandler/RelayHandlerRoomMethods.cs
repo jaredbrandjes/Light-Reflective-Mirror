@@ -196,6 +196,8 @@ namespace LightReflectiveMirror {
 
                         sendJoinBuffer.WriteInt (ref sendJoinPos, room.useNATPunch ? room.hostIP.Port : room.port);
                         sendJoinBuffer.WriteBool (ref sendJoinPos, room.useNATPunch);
+                        sendJoinBuffer.WriteString (ref sendJoinPos, requestedGroupId);
+                        sendJoinBuffer.WriteInt (ref sendJoinPos, requestedAuthLevel);
 
                         Program.transport.ServerSend (clientId, new ArraySegment<byte> (sendJoinBuffer, 0, sendJoinPos), 0);
 

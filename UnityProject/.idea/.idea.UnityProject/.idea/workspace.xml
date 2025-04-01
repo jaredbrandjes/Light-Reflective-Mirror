@@ -5,136 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ea540524-5e27-4319-8955-f63ebd7085a0" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/global.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/.idea/.idea.LRM/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/.idea/.idea.LRM/.idea/.name" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/.idea/.idea.LRM/.idea/indexLayout.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/.idea/.idea.LRM/.idea/vcs.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/LRM/Program/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/LRM/Program/Program.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/LRM/Program/ProgramConfigurator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/LRM/Program/ProgramConfigurator.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/LRM/RelayHandler/RelayHandler.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/LRM/RelayHandler/RelayHandler.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/LRM/RelayHandler/RelayHandlerCallbacks.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/LRM/RelayHandler/RelayHandlerCallbacks.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/.idea/.idea.LRM/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/.idea/.idea.LRM/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/LRM/RelayHandler/RelayHandlerRoomMethods.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/LRM/RelayHandler/RelayHandlerRoomMethods.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/LRM/Transport.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/LRM/Transport.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Ignorance/Core/IgnoranceClient.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Ignorance/Core/IgnoranceServer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Ignorance/Dependencies/ENet.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Ignorance/Ignorance.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Ignorance/IgnoranceDefinitions.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Ignorance/Plugins/Linux/libenet.so" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Ignorance/Plugins/Windows/README.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Ignorance/Plugins/Windows/enet.dll" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Ignorance/Plugins/readme.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/KCP/KcpTransport.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/KCP/KcpTransport.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/KCP/highlevel/Common.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/KCP/highlevel/Common.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/KCP/highlevel/KcpClient.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/KCP/highlevel/KcpClient.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/KCP/highlevel/KcpHeader.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/KCP/highlevel/KcpHeader.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/KCP/highlevel/KcpPeer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/KCP/highlevel/KcpPeer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/KCP/highlevel/KcpServer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/KCP/highlevel/KcpServer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/KCP/highlevel/KcpServerConnection.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/KCP/highlevel/KcpServerConnection.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/KcpWebCombined.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/KcpWebCombined.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/SimpleWebTransport/SimpleWebTransport.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/SimpleWebTransport/SimpleWebTransport.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Telepathy/Telepathy/Client.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Telepathy/Telepathy/Common.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Telepathy/Telepathy/ConnectionState.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Telepathy/Telepathy/EventType.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Telepathy/Telepathy/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Telepathy/Telepathy/Log.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Telepathy/Telepathy/Logger.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Telepathy/Telepathy/MagnificentReceivePipe.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Telepathy/Telepathy/MagnificentSendPipe.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Telepathy/Telepathy/Message.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Telepathy/Telepathy/NetworkStreamExtensions.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Telepathy/Telepathy/Pool.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Telepathy/Telepathy/SafeQueue.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Telepathy/Telepathy/Server.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Telepathy/Telepathy/ThreadExtensions.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Telepathy/Telepathy/ThreadFunctions.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Telepathy/Telepathy/Utils.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Telepathy/Telepathy/VERSION" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Telepathy/TelepathyConfig.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ServerProject-DONT-IMPORT-INTO-UNITY/MultiCompiled/Telepathy/TelepathyTransport.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/LRMTestScene.unity" beforeDir="false" afterPath="$PROJECT_DIR$/Assets/LRMTestScene.unity" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror.rar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror.rar.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/Editor.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/Editor/ClientWebsocketSettingsDrawer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/Editor/ClientWebsocketSettingsDrawer.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/AssemblyInfo.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/AssemblyInfo.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/CHANGELOG.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/CHANGELOG.md.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Client.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Client/ClientWebsocketSettings.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Client/ClientWebsocketSettings.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Client/SimpleWebClient.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Client/SimpleWebClient.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Client/StandAlone.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Client/StandAlone/ClientHandshake.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Client/StandAlone/ClientHandshake.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Client/StandAlone/ClientSslHelper.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Client/StandAlone/ClientSslHelper.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Client/StandAlone/WebSocketClientStandAlone.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Client/StandAlone/WebSocketClientStandAlone.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Client/Webgl.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Client/Webgl/SimpleWebJSLib.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Client/Webgl/SimpleWebJSLib.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Client/Webgl/WebSocketClientWebGl.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Client/Webgl/WebSocketClientWebGl.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Client/Webgl/plugin.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Client/Webgl/plugin/SimpleWeb.jslib" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Client/Webgl/plugin/SimpleWeb.jslib.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/BufferPool.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/BufferPool.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/Connection.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/Connection.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/Constants.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/Constants.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/EventType.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/EventType.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/Log.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/Log.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/Message.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/Message.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/MessageProcessor.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/MessageProcessor.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/ReadHelper.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/ReadHelper.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/ReceiveLoop.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/ReceiveLoop.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/Request.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/Request.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/SendLoop.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/SendLoop.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/TcpConfig.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/TcpConfig.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/Utils.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Common/Utils.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/LICENSE" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/LICENSE.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/README.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/README.txt.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Server.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Server/ServerHandshake.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Server/ServerHandshake.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Server/ServerSslHelper.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Server/ServerSslHelper.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Server/SimpleWebServer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Server/SimpleWebServer.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Server/WebSocketServer.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/Server/WebSocketServer.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/SimpleWebTransport.asmdef" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/SimpleWebTransport.asmdef.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/SslConfigLoader.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWeb/SslConfigLoader.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWebTransport.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/Mirror/Transports/SimpleWeb/SimpleWebTransport.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Assets/StreamingAssets.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Packages/manifest.json" beforeDir="false" afterPath="$PROJECT_DIR$/Packages/manifest.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Packages/packages-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/Packages/packages-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.UnityProject/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.UnityProject/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ProjectSettings/ProjectSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/ProjectSettings/ProjectSettings.asset" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -150,8 +25,8 @@
               <option name="branches">
                 <list>
                   <RecentBranch>
-                    <option name="branchName" value="Update-Mirror" />
-                    <option name="lastUsedInstant" value="1738621492" />
+                    <option name="branchName" value="GroupId+AuthLevel" />
+                    <option name="lastUsedInstant" value="1738672239" />
                   </RecentBranch>
                   <RecentBranch>
                     <option name="branchName" value="main" />
@@ -168,34 +43,36 @@
   </component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$PROJECT_DIR$/Assets/Mirror/Editor/NetworkBehaviourInspector.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/Assets/Scripts/HybridRelayLocalNetwork/AuthenticationConnectionManager.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/../UnityProject_clone_0/Assets/Mirror/Transports/LRM/LRMTransport/LightReflectiveMirrorTransport.cs" root0="SKIP_HIGHLIGHTING" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 1
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 1
+}</component>
   <component name="ProjectId" id="2sXzUFsiIxV6C9KUgpKidXTq39J" />
   <component name="ProjectViewState">
     <option name="autoscrollFromSource" value="true" />
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   },
-  "keyToStringList": {
-    "rider.external.source.directories": [
-      "C:\\Users\\Jared\\AppData\\Roaming\\JetBrains\\Rider2024.1\\resharper-host\\DecompilerCache",
-      "C:\\Users\\Jared\\AppData\\Roaming\\JetBrains\\Rider2024.1\\resharper-host\\SourcesCache",
-      "C:\\Users\\Jared\\AppData\\Local\\Symbols\\src"
+  &quot;keyToStringList&quot;: {
+    &quot;rider.external.source.directories&quot;: [
+      &quot;C:\\Users\\Jared\\AppData\\Roaming\\JetBrains\\Rider2024.1\\resharper-host\\DecompilerCache&quot;,
+      &quot;C:\\Users\\Jared\\AppData\\Roaming\\JetBrains\\Rider2024.1\\resharper-host\\SourcesCache&quot;,
+      &quot;C:\\Users\\Jared\\AppData\\Local\\Symbols\\src&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="Attach to Unity Editor.Attach to Unity Editor">
     <configuration name="Start Unity" type="RunUnityExe" factoryName="Unity Executable">
       <option name="EXE_PATH" value="C:\Program Files\Unity\Hub\Editor\2022.3.24f1\Editor\Unity.exe" />
@@ -243,6 +120,10 @@
       <option name="presentableId" value="Default" />
       <updated>1738616720834</updated>
       <workItem from="1738616722215" duration="8126000" />
+      <workItem from="1738668634044" duration="6781000" />
+      <workItem from="1738694401854" duration="6479000" />
+      <workItem from="1738736754548" duration="19861000" />
+      <workItem from="1738782658091" duration="616000" />
     </task>
     <servers />
   </component>

@@ -8,31 +8,22 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="32bf9ac5-5f17-43ce-9476-57a36f4c0e96" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.LRM/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.LRM/.idea/.name" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.LRM/.idea/indexLayout.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.idea.LRM/.idea/vcs.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProject/Assets/LRM.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProject/Assets/Mirror.rar" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProject/Assets/Mirror.rar.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProject/Assets/Mirror/Components/Experimental.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProject/Assets/Mirror/Components/NetworkTransform/NetworkTransform.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProject/Assets/Mirror/Components/NetworkTransform/NetworkTransform.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProject/Assets/Mirror/Components/NetworkTransform/NetworkTransformChild.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProject/Assets/Mirror/Components/NetworkTransform/NetworkTransformChild.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProject/Assets/Mirror/Components/PredictedRigidbody/GhostMaterial.mat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProject/Assets/Mirror/Components/PredictedRigidbody/GhostMaterial.mat.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProject/Assets/Mirror/Components/PredictedRigidbody/PredictedRigidbodyVisual.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProject/Assets/Mirror/Components/PredictedRigidbody/PredictedRigidbodyVisual.cs.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProject/Assets/Mirror/Examples.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProject/Assets/Mirror/Transports/SimpleWeb/.cert.example.Json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProject/Assets/Mirror/Transports/SimpleWeb/.cert.example.Json.meta" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../UnityProject/Assets/StreamingAssets.meta" beforeDir="false" afterPath="$PROJECT_DIR$/../UnityProject/Assets/StreamingAssets.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.LRM/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.LRM/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LRM/LRM.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/LRM/LRM.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LRM/RelayHandler/RelayHandlerRoomMethods.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LRM/RelayHandler/RelayHandlerRoomMethods.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MultiCompiled/MultiCompiled.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/MultiCompiled/MultiCompiled.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/global.json" beforeDir="false" afterPath="$PROJECT_DIR$/global.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnityProject/.idea/.idea.UnityProject/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../UnityProject/.idea/.idea.UnityProject/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../UnityProject/ProjectSettings/ProjectSettings.asset" beforeDir="false" afterPath="$PROJECT_DIR$/../UnityProject/ProjectSettings/ProjectSettings.asset" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="DpaMonitoringSettings">
+    <option name="autoShow" value="false" />
   </component>
   <component name="GitToolBoxStore">
     <option name="recentBranches">
@@ -62,33 +53,34 @@
   <component name="Plastic.Settings">
     <option name="enabled" value="false" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 6
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 6
+}</component>
   <component name="ProjectId" id="2sYLaRIzgdZLw2ywGHes7mypCOz" />
   <component name="ProjectViewState">
     <option name="autoscrollFromSource" value="true" />
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;.NET Project.LRM.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   },
-  "keyToStringList": {
-    "rider.external.source.directories": [
-      "C:\\Users\\Jared\\AppData\\Roaming\\JetBrains\\Rider2024.1\\resharper-host\\DecompilerCache",
-      "C:\\Users\\Jared\\AppData\\Roaming\\JetBrains\\Rider2024.1\\resharper-host\\SourcesCache",
-      "C:\\Users\\Jared\\AppData\\Local\\Symbols\\src"
+  &quot;keyToStringList&quot;: {
+    &quot;rider.external.source.directories&quot;: [
+      &quot;C:\\Users\\Jared\\AppData\\Roaming\\JetBrains\\Rider2024.1\\resharper-host\\DecompilerCache&quot;,
+      &quot;C:\\Users\\Jared\\AppData\\Roaming\\JetBrains\\Rider2024.1\\resharper-host\\SourcesCache&quot;,
+      &quot;C:\\Users\\Jared\\AppData\\Local\\Symbols\\src&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration name="LRM" type="DotNetProject" factoryName=".NET Project">
       <option name="EXE_PATH" value="" />
@@ -118,6 +110,13 @@
       <option name="presentableId" value="Default" />
       <updated>1738627624739</updated>
       <workItem from="1738627625923" duration="946000" />
+      <workItem from="1738694376951" duration="3567000" />
+      <workItem from="1738736789102" duration="2333000" />
+      <workItem from="1738782047950" duration="1891000" />
+      <workItem from="1738826031158" duration="720000" />
+      <workItem from="1743444940538" duration="1093000" />
+      <workItem from="1743489233112" duration="314000" />
+      <workItem from="1743489627480" duration="1309000" />
     </task>
     <servers />
   </component>
