@@ -1,4 +1,5 @@
-﻿using Mirror;
+﻿using System;
+using Mirror;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -102,7 +103,7 @@ namespace LightReflectiveMirror {
 
             _clientSendBuffer.WriteString (ref pos, local ?? "0.0.0.0");
 
-            _isClient = true;
+            IsClient = true;
 
             clientToServerTransport.ClientSend (new System.ArraySegment<byte> (_clientSendBuffer, 0, pos), 0);
         }

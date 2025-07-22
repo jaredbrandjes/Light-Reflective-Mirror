@@ -52,7 +52,7 @@ namespace kcp2k {
 
         public override void Awake () {
             if (config == null) {
-                config = new KcpConfig(DualMode, RecvBufferSize, SendBufferSize, MTU, NoDelay, Interval, FastResend, CongestionWindow, SendWindowSize, ReceiveWindowSize, Timeout, MaxRetransmit);
+                config = new KcpConfig (DualMode, RecvBufferSize, SendBufferSize, MTU, NoDelay, Interval, FastResend, CongestionWindow, SendWindowSize, ReceiveWindowSize, Timeout, MaxRetransmit);
             }
 
             bool noConfig = bool.Parse (Environment.GetEnvironmentVariable ("NO_CONFIG") ?? "false");
@@ -97,7 +97,7 @@ namespace kcp2k {
                 () => OnClientConnected.Invoke (),
                 (message, channel) => OnClientDataReceived.Invoke (message, 0),
                 () => OnClientDisconnected?.Invoke (), // may be null in StopHost(): https://github.com/MirrorNetworking/Mirror/issues/3708
-                (error, reason) => Console.WriteLine(error.ToString ()),
+                (error, reason) => Console.WriteLine (error.ToString ()),
                 config
             );
 
@@ -106,7 +106,7 @@ namespace kcp2k {
                 (connectionId) => OnServerConnected.Invoke (connectionId),
                 (connectionId, message, channel) => OnServerDataReceived.Invoke (connectionId, message, FromKcpChannel (channel)),
                 (connectionId) => OnServerDisconnected.Invoke (connectionId),
-                (connectionId, error, reason) => Console.WriteLine(error.ToString ()),
+                (connectionId, error, reason) => Console.WriteLine (error.ToString ()),
                 config
             );
 
@@ -132,7 +132,7 @@ namespace kcp2k {
             // switch to kcp channel.
             // unreliable or reliable.
             // default to reliable just to be sure.
-            client.Send(segment, ToKcpChannel(channelId));
+            client.Send (segment, ToKcpChannel (channelId));
         }
 
         public override void ClientDisconnect () => client.Disconnect ();
@@ -166,8 +166,7 @@ namespace kcp2k {
         //     // OnServerDataSent?.Invoke (connectionId, segment, channelId);
         // }
 
-        public override void ServerSend(int connectionId, ArraySegment<byte> segment, int channelId)
-        {
+        public override void ServerSend (int connectionId, ArraySegment<byte> segment, int channelId) {
             // switch to kcp channel.
             // unreliable or reliable.
             // default to reliable just to be sure.
@@ -302,4 +301,3 @@ namespace kcp2k {
     }
 }
 //#endif MIRROR <- commented out because MIRROR isn't defined on first import yet
-

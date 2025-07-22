@@ -1,13 +1,11 @@
-﻿using Mirror;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using Mirror;
 using UnityEngine.Events;
 
-namespace LightReflectiveMirror
-{
-    public partial class LightReflectiveMirrorTransport : Transport
-    {
+namespace LightReflectiveMirror {
+    public partial class LightReflectiveMirrorTransport : Transport {
         // Connection/auth variables
         public Transport clientToServerTransport;
         public string serverIP = null;
@@ -40,7 +38,7 @@ namespace LightReflectiveMirror
 
         // Server list variables
         public UnityEvent serverListUpdated;
-        public List<Room> relayServerList { private set; get; } = new List<Room>();
+        public List<Room> relayServerList { private set; get; } = new List<Room> ();
 
         // Current Server Information
         public string serverStatus = "Not Started.";
@@ -53,7 +51,18 @@ namespace LightReflectiveMirror
         private byte[] _clientSendBuffer;
         private bool _connectedToRelay = false;
         private bool _isClient = false;
+
+        public bool IsClient {
+            get => _isClient;
+            set => _isClient = value;
+        }
         private bool _isServer = false;
+
+        public bool IsServer {
+            get => _isServer;
+            set => _isServer = value;
+        }
+
         private bool _directConnected = false;
         private bool _isAuthenticated = false;
         private int _currentMemberId;
@@ -65,9 +74,9 @@ namespace LightReflectiveMirror
         private byte[] _punchData = new byte[1] { 1 };
         private IPEndPoint _directConnectEndpoint;
         private SocketProxy _clientProxy;
-        private BiDictionary<IPEndPoint, SocketProxy> _serverProxies = new BiDictionary<IPEndPoint, SocketProxy>();
-        private BiDictionary<int, int> _connectedRelayClients = new BiDictionary<int, int>();
-        private BiDictionary<int, int> _connectedDirectClients = new BiDictionary<int, int>();
+        private BiDictionary<IPEndPoint, SocketProxy> _serverProxies = new BiDictionary<IPEndPoint, SocketProxy> ();
+        private BiDictionary<int, int> _connectedRelayClients = new BiDictionary<int, int> ();
+        private BiDictionary<int, int> _connectedDirectClients = new BiDictionary<int, int> ();
         private bool _serverListUpdated = false;
     }
 

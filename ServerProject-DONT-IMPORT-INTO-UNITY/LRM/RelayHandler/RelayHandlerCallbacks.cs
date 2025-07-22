@@ -1,6 +1,5 @@
-﻿using LightReflectiveMirror.Endpoints;
-using System;
-using Microsoft.Extensions.Logging;
+﻿using System;
+using LightReflectiveMirror.Endpoints;
 
 namespace LightReflectiveMirror {
     public partial class RelayHandler {
@@ -52,18 +51,43 @@ namespace LightReflectiveMirror {
 
                 switch (opcode) {
                     case OpCodes.CreateRoom:
-                        CreateRoom (clientId,
-                            data.ReadInt (ref pos),
-                            data.ReadString (ref pos),
-                            data.ReadBool (ref pos),
-                            data.ReadString (ref pos),
-                            data.ReadBool (ref pos),
-                            data.ReadString (ref pos),
-                            data.ReadBool (ref pos),
-                            data.ReadInt (ref pos),
-                            data.ReadInt (ref pos),
-                            data.ReadString (ref pos)
-                        );
+                        try {
+                            int _maxPlayers = data.ReadInt (ref pos);
+                            Program.WriteLogMessage ($"Debug CreateRoom: maxPlayers={_maxPlayers}");
+
+                            string _serverName = data.ReadString (ref pos);
+                            Program.WriteLogMessage ($"Debug CreateRoom: serverName={_serverName}");
+
+                            bool _isPublic = data.ReadBool (ref pos);
+                            Program.WriteLogMessage ($"Debug CreateRoom: isPublic={_isPublic}");
+
+                            string _serverData = data.ReadString (ref pos);
+                            Program.WriteLogMessage ($"Debug CreateRoom: serverData={_serverData}");
+
+                            bool _useDirectConnect = data.ReadBool (ref pos);
+                            Program.WriteLogMessage ($"Debug CreateRoom: useDirectConnect={_useDirectConnect}");
+
+                            string _hostLocalIP = data.ReadString (ref pos);
+                            Program.WriteLogMessage ($"Debug CreateRoom: hostLocalIP={_hostLocalIP}");
+
+                            bool _useNatPunch = data.ReadBool (ref pos);
+                            Program.WriteLogMessage ($"Debug CreateRoom: useNatPunch={_useNatPunch}");
+
+                            int _port = data.ReadInt (ref pos);
+                            Program.WriteLogMessage ($"Debug CreateRoom: port={_port}");
+
+                            int _appId = data.ReadInt (ref pos);
+                            Program.WriteLogMessage ($"Debug CreateRoom: appId={_appId}");
+
+                            string _version = data.ReadString (ref pos);
+                            Program.WriteLogMessage ($"Debug CreateRoom: version={_version}");
+
+                            CreateRoom (clientId, _maxPlayers, _serverName, _isPublic, _serverData,
+                                _useDirectConnect, _hostLocalIP, _useNatPunch, _port, _appId, _version);
+                        } catch (Exception e) {
+                            Program.WriteLogMessage ($"CreateRoom failed at position {pos}: {e.Message}");
+                            throw;
+                        }
                         break;
                     case OpCodes.RequestID:
                         SendClientID (clientId);
@@ -74,7 +98,10 @@ namespace LightReflectiveMirror {
                         break;
                     case OpCodes.JoinServer:
                         string _serverId = data.ReadString (ref pos);
-                        JoinRoom (clientId, _serverId, data.ReadBool (ref pos), data.ReadString (ref pos));
+                        bool canDirectConnect = data.ReadBool (ref pos);
+                        string localIP = data.ReadString (ref pos);
+
+                        JoinRoom (clientId, _serverId, canDirectConnect, localIP);
                         Program.WriteLogMessage ($"Client [{clientId}] [{opcode}] [{_serverId}] | Rooms [{string.Join (',', _cachedRooms.Keys)}]");
                         break;
                     case OpCodes.KickPlayer:

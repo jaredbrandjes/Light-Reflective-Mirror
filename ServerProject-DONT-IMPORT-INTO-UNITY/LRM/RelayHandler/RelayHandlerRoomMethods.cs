@@ -1,7 +1,7 @@
-﻿using LightReflectiveMirror.Endpoints;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using LightReflectiveMirror.Endpoints;
 
 namespace LightReflectiveMirror {
     public partial class RelayHandler {
@@ -17,7 +17,19 @@ namespace LightReflectiveMirror {
         /// <param name="hostLocalIP">The hosts local IP</param>
         /// <param name="useNatPunch">Whether or not, the host is supporting NAT Punch</param>
         /// <param name="port">The port of the direct connect transport on the host</param>
-        private void CreateRoom (int clientId, int maxPlayers, string serverName, bool isPublic, string serverData, bool useDirectConnect, string hostLocalIP, bool useNatPunch, int port, int appId, string version, string providedServerId = null) {
+        private void CreateRoom (
+            int clientId,
+            int maxPlayers,
+            string serverName,
+            bool isPublic,
+            string serverData,
+            bool useDirectConnect,
+            string hostLocalIP,
+            bool useNatPunch,
+            int port,
+            int appId,
+            string version,
+            string providedServerId = null) {
             LeaveRoom (clientId);
             Program.instance.NATConnections.TryGetValue (clientId, out IPEndPoint hostIP);
 
@@ -36,23 +48,22 @@ namespace LightReflectiveMirror {
                 supportsDirectConnect = hostIP != null && useDirectConnect,
                 port = port,
                 useNATPunch = useNatPunch,
-                relayInfo = new RelayAddress { address = Program.publicIP, port = Program.conf.TransportPort, endpointPort = Program.conf.EndpointPort, serverRegion = Program.conf.LoadBalancerRegion }
+                relayInfo = new RelayAddress {
+                    address = Program.publicIP,
+                    port = Program.conf.TransportPort,
+                    endpointPort = Program.conf.EndpointPort,
+                    serverRegion = Program.conf.LoadBalancerRegion
+                }
             };
 
             rooms.Add (room);
             _cachedClientRooms.Add (clientId, room);
             _cachedRooms.Add (room.serverId, room);
 
-            Console.WriteLine ($"[{DateTime.UtcNow}] Client [{clientId}] | Room Created [{room.serverId}] | Rooms [{string.Join (',', _cachedRooms.Keys)}]");
+            Console.WriteLine ($"[{DateTime.UtcNow}] Client [{clientId}] | Room Created [{room.serverId}]");
 
-            int pos = 0;
-            byte[] sendBuffer = _sendBuffers.Rent (5);
-
-            sendBuffer.WriteByte (ref pos, (byte) OpCodes.RoomCreated);
-            sendBuffer.WriteString (ref pos, room.serverId);
-
-            Program.transport.ServerSend (clientId, new ArraySegment<byte> (sendBuffer, 0, pos), 0);
-            _sendBuffers.Return (sendBuffer);
+            // Use the common response method
+            SendRoomCreatedResponse (clientId, room.serverId);
 
             Endpoint.RoomsModified ();
         }
@@ -179,13 +190,13 @@ namespace LightReflectiveMirror {
             }
 
             // If it got to here, then the server was not found, or full. Tell the client.
-            int pos = 0;
-            byte[] sendBuffer = _sendBuffers.Rent (1);
+            int _pos = 0;
+            byte[] _sendBuffer = _sendBuffers.Rent (1);
 
-            sendBuffer.WriteByte (ref pos, (byte) OpCodes.ServerLeft);
+            _sendBuffer.WriteByte (ref _pos, (byte) OpCodes.ServerLeft);
 
-            Program.transport.ServerSend (clientId, new ArraySegment<byte> (sendBuffer, 0, pos), 0);
-            _sendBuffers.Return (sendBuffer);
+            Program.transport.ServerSend (clientId, new ArraySegment<byte> (_sendBuffer, 0, _pos), 0);
+            _sendBuffers.Return (_sendBuffer);
         }
 
         /// <summary>
