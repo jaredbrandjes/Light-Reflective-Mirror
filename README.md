@@ -1,26 +1,32 @@
-
-
 ![Logo](LRM.png)
 
+# Light Reflective Mirror - Enhanced v15
 
+![GitHub issues](https://img.shields.io/github/issues-raw/4t0m1c/Light-Reflective-Mirror)
 
-# Light Reflective Mirror
+**Enhanced community-maintained fork with modern Mirror compatibility**
 
-![GitHub release (latest by SemVer)](https://img.shields.io/github/downloads/Speidy674/Light-Reflective-Mirror/latest/total)
-![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/speidy674/Light-Reflective-Mirror)
-![GitHub issues](https://img.shields.io/github/issues-raw/speidy674/Light-Reflective-Mirror)
+## What's New in v15
 
-LRM Node / MultiCompiled
+This release builds upon [Speidy674's V14 maintenance work](https://github.com/Speidy674/Light-Reflective-Mirror) with significant modernization:
 
-[![Build Node](https://github.com/Speidy674/Light-Reflective-Mirror/actions/workflows/build-node.yml/badge.svg)](https://github.com/Speidy674/Light-Reflective-Mirror/actions/workflows/build-node.yml)
+### 🚀 **Key Improvements**
+- **Mirror 93.0.0+ Compatibility** - Full support for modern Mirror versions
+- **.NET 8.0 Upgrade** - Enhanced performance and latest framework features  
+- **Enhanced Stability** - Fixed network component sync issues with current Mirror
+- **Better Performance** - Optimized buffer management and memory allocation
+- **Improved Reliability** - Enhanced error handling and connection state management
 
-
-LoadBalancer 
-
-[![Build Load Balancer](https://github.com/Speidy674/Light-Reflective-Mirror/actions/workflows/build-loadbalancer.yml/badge.svg)](https://github.com/Speidy674/Light-Reflective-Mirror/actions/workflows/build-loadbalancer.yml)
+### 🔧 **Technical Enhancements**
+- Property-based API with `IsServer`/`IsClient` properties
+- Comprehensive data validation and bounds checking
+- Integrated Newtonsoft.Json for robust serialization
+- Enhanced debugging and logging capabilities
+- Fixed SimpleWebTransport FQDN resolution issues
 
 ## What
-Light Reflective Mirror is a transport for Mirror Networking which relays network traffic through your own servers. This allows you to have clients host game servers and not worry about NAT/Port Forwarding, etc. There are still features I plan on adding but it still is completely stable in its current state.
+
+Light Reflective Mirror is a transport for Mirror Networking which relays network traffic through your own servers. This allows you to have clients host game servers and not worry about NAT/Port Forwarding, etc. This enhanced version ensures compatibility with modern Unity and Mirror versions while maintaining all original functionality.
 
 ## Features
 * WebGL Support, WebGL can host servers!
@@ -30,14 +36,20 @@ Light Reflective Mirror is a transport for Mirror Networking which relays networ
 * NAT Punchtrough (Full Cone, Restricted Cone, and Port Restricted Cone)
 * Direct Connecting
 * Load Balancing with multi-relay setup
+* **NEW: Modern Mirror 93.0.0+ compatibility**
+* **NEW: .NET 8.0 performance improvements**
 
 ## How does it work?
 
 I took a bit of a unique approach to this version and instead of using one fixed net library for the game to communicate with the standalone relay server, I instead made it use any of mirrors transports! This allows you to make it work with websockets, Ignorance(ENET), LiteNetLib, and all the others!
 
-## Known Issues/Flaws
+## Migration from V14
 
-Disconnects from the relay will not auto reconnect **yet**. So a dedicated host is extremely recommended! Or implement your own logic to auto reconnect.
+This is a **drop-in replacement** for Speidy674's V14:
+- ✅ Full protocol compatibility with V14 and original LRM
+- ✅ Works with existing server deployments  
+- ✅ Same API, enhanced performance
+- ✅ No code changes required
 
 ## Tutorials
 
@@ -51,11 +63,9 @@ https://www.youtube.com/watch?v=Wi0rp2b8KmM
 
 ## Usage
 
-Now for the juicy part, using it. Like I mentioned in the 'What' section, this is a prototype so if theres problems, please report them to me. Also PRs are also always welcomed! :)
-
 First things first, you will need:
 * Mirror, Install that from Asset Store.
-* Download the latest release of Light Reflective Mirror Unity Package and put that in your project also. Download from: [Releases](https://github.com/Speidy674/Light-Reflective-Mirror/releases).
+* Download the latest release of Light Reflective Mirror Unity Package and put that in your project also. Download from: [Releases](https://github.com/4t0m1c/Light-Reflective-Mirror/releases).
 
 #### Client Setup
 Running a client is fairly straight forward, attach the LightReflectiveMirrorTransport script to your NetworkManager and set it as the transport. Put in the IP/Port of your relay server, assign LightReflectiveMirror as the Transport on the NetworkManager. Then attach the SimpleWebTransport script and assign that in the 'ClientToServerTransport' in the Light Reflective Mirror inspector. When you start a server, you can simply get the URI from the transport and use that to connect. If you wish to connect without the URI, the LightReflectiveMirror component has a public "Server ID" field which is what clients would set as the address to connect to. 
@@ -69,8 +79,8 @@ Light Reflective Mirror has a built in room/server list if you would like to use
 To request the server list you need a reference to the LightReflectiveMirrorTransport from your script and call 'RequestServerList()'. This will invoke a request to the server to update our server list. Once the response is recieved the field 'relayServerList' will be populated and you can get all the servers from there.
  
 #### Server Setup
-Download the latest Server release from: [Releases]([https://github.com/Derek-R-S/Light-Reflective-Mirror/releases](https://github.com/Speidy674/Light-Reflective-Mirror/releases))
-Make sure you have .NET Core 5.0
+Download the latest Server release from: [Releases](https://github.com/4t0m1c/Light-Reflective-Mirror/releases)
+Make sure you have .NET 8.0 Runtime
 And all you need to do is run LRM.exe on windows, or "dotnet LRM.dll" on linux!
 
 #### Server Config
@@ -93,6 +103,14 @@ UpdateLoopTime - The time in miliseconds between calling 'Update' on the transpo
 
 UpdateHeartbeatInterval - the amounts of update calls before sending a heartbeat. By default its 100, which if updateLoopTime is 10, means every (10 * 100 = 1000ms) it will send out a heartbeat.
 
+## Compatibility Matrix
+
+| Component | Original LRM | Speidy674 V14 | This Release (v15) |
+|-----------|--------------|---------------|-------------------|
+| .NET Framework | 5.0 | 7.0 | 8.0+ |
+| Mirror | Up to ~30.x | Up to ~50.x | 93.0.0+ |
+| Unity | 2020.3+ | 2021.3+ | 2021.3+ |
+
 ## What to choose, Epic, Steam, LRM?
 
 There are quiet a few relay transports for mirror at this point, It can often be difficult to pick one that most suits your needs. So I'll quickly go over my view on it and hopefully it helps you make an informed decision.
@@ -104,27 +122,26 @@ Starting with steam, steam offers a free relay with NAT punchthrough for anyone 
 Epic is a newer transport that offers NAT Punchthrough, and a relay service for free. As of writing this its only available for usage on Windows/Mac/Linux (More platforms are planned and releasing in the future). This one is great because they offer it for free! Thats right, a free relay and NAT punchthrough server, plus more! They have more tools such as Matchmaking, server browser, statistics, and more! This is NOT locked into only releasing on Epic Store, like how steams is. So you can release on any store you want if your game uses this. Now onto the downsides, they have a very PITA SDK to use with a fairly small community for the C# side of things. (FakeByte helps alot in the discord and will help with features outside of the relay transport!). The documentation is sub-par and severely lacking in some places, which is expected as its fairly new. They also have Epic Account Services, which is similar to steams but like the relay, not locked into one store! With those services you get user accounts, In game purchases, achievements, and much more. So if you want a free relay/NAT Punchthrough server, and want to go along for the ride of EoS, this is the one. You cant beat free. :P Check it out [here](https://github.com/FakeByte/EpicOnlineTransport)
 
 ### LRM
-LRM is a self-hosted, open source, relay/NAT Punchthrough server. It's available for all platforms (PC, Mac, Linux, WebGL, Android, IOS, You name it!). It does this by supporting any of mirrors existing transports. If you want webgl? Use websockets! Want TCP? Telepathy! UDP? KCP! This is one of LRM's main features. The game developer can decide on how they want their data sent between the server and clients. With LRM, you are going to have to host the servers yourself. We are releasing a load balancer soon which will make it super easy to expand servers in regions and balance users out between them. The more powerful of a server you have, the more that LRM node can host. With some tests (All clients relayed, none NAT punched), we could get about ~200 CCU on a $5 google cloud server (f1-micro). Though, LRM is still constantly being worked on and could have changes, rewrites, etc at any time. You are able to contribute if you find any bugs, just by opening a PR! So, if you are more of a self-hosting person, who wants full control of your servers, or want a relay for a platform the others don't support (WebGL). Use LRM, if you have any questions, we are in the discord channel everyday! :)
-
-### Video Tutorial Commands
-
-*new docker images comming soon*
-
-Pull docker image: `docker pull derekrs/lrm_node:Bleeding-Edge`
-
-Run docker for config: `docker run -it --rm -v /root/:/config --name lrm-node derekrs/lrm_node:Bleeding-Edge`
-
-Run docker headless: `docker run -d -it --rm -p 8080:8080 -p 7777:7777/udp -p 7776:7776/udp -v /root/:/config --name lrm-node derekrs/lrm_node:Bleeding-Edge`
+LRM is a self-hosted, open source, relay/NAT Punchthrough server. It's available for all platforms (PC, Mac, Linux, WebGL, Android, IOS, You name it!). It does this by supporting any of mirrors existing transports. If you want webgl? Use websockets! Want TCP? Telepathy! UDP? KCP! This is one of LRM's main features. The game developer can decide on how they want their data sent between the server and clients. With LRM, you are going to have to host the servers yourself. We are releasing a load balancer soon which will make it super easy to expand servers in regions and balance users out between them. The more powerful of a server you have, the more that LRM node can host. With some tests (All clients relayed, none NAT punched), we could get about ~200 CCU on a $5 google cloud server (f1-micro). **This enhanced v15 version ensures LRM continues working with modern Mirror versions while maintaining all these benefits.** So, if you are more of a self-hosting person, who wants full control of your servers, or want a relay for a platform the others don't support (WebGL). Use LRM, if you have any questions, we are in the discord channel everyday! :)
 
 ## Credits
 
-Derek-R-S - which maintained and developed it until v12.
+**Maintenance Chain:**
+* **Derek-R-S** - Original creator and maintainer through v12
+* **Speidy674** - Community maintenance fork, V14 with .NET 7 upgrade  
+* **Biebras** - V14 bug fixes and improvements
+* **4t0m1c** - V15 Mirror compatibility and .NET 8 modernization
 
-Cooper - Assisted with development and made some wonderful features! He's also active in the discord to help answer questions and help with issues.
+**Original Contributors:**
+* **Cooper** - Assisted with development and made some wonderful features! He's also active in the discord to help answer questions and help with issues.
+* **Maqsoom & JesusLuvsYooh** - Both really active testers and have been testing it since the idea was pitched. They tested almost all versions of DRM and LRM!
+* **All Mirror Transport Creators!** - They made all the transports that this thing relies on! Especially the Simple Web Transport by default!
 
-Maqsoom & JesusLuvsYooh - Both really active testers and have been testing it since I pitched the idea. They tested almost all versions of DRM and I am sure they will test the crap out of LRM!
+## Project History
 
-All Mirror Transport Creators! - They made all the transports that this thing relies on! Especially the Simple Web Transport by default!
+- **Original**: [Derek-R-S/Light-Reflective-Mirror](https://github.com/Derek-R-S/Light-Reflective-Mirror) (v1-v12)
+- **V14 Base**: [Speidy674/Light-Reflective-Mirror](https://github.com/Speidy674/Light-Reflective-Mirror) (community maintenance)
+- **This Release**: [4t0m1c/Light-Reflective-Mirror](https://github.com/4t0m1c/Light-Reflective-Mirror) (community maintenance)
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
