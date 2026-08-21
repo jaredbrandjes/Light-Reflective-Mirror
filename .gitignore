@@ -1,1 +1,23 @@
+# ParrelSync clones
 *_clone_*
+
+# Build output
+[Bb]in/
+[Oo]bj/
+[Ll]ogs/
+
+# IDE / editor
+.idea/
+.vs/
+*.user
+*.DotSettings.user
+
+# Release artifacts (attach to a GitHub Release instead of committing)
+*.unitypackage
+
+# Local analysis scratch
+changelog.txt
+commit_analysis.json
+file_changes.txt
+enhanced_changelog.sh
+file_diff_*.txt
