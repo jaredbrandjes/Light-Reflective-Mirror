@@ -79,22 +79,48 @@ namespace LightReflectiveMirror {
         }
 
         public override void ClientDisconnect () {
-            if (IsClient) {
-                _isClient = false;
-                int pos = 0;
-                _clientSendBuffer.WriteByte (ref pos, (byte) OpCodes.LeaveRoom);
+            // Mirror re-enters this via the OnClientDisconnected invoke below;
+            // bail out on the second pass instead of sending LeaveRoom twice.
+            if (_intentionalDisconnect)
+                return;
 
-                // Send leave room notification
-                if (Available ()) {
+            _intentionalDisconnect = true;
+
+            try {
+                bool wasClient = IsClient;
+                bool wasDirect = _directConnected;
+
+                _isClient = false;
+                _directConnected = false;
+
+                if (wasClient && Available ()) {
+                    int pos = 0;
+                    _clientSendBuffer.WriteByte (ref pos, (byte) OpCodes.LeaveRoom);
                     clientToServerTransport.ClientSend (new ArraySegment<byte> (_clientSendBuffer, 0, pos), 0);
                 }
+
+                // Only tear down the direct transport if we actually had a direct
+                // connection. _intentionalDisconnect stops the callback this
+                // raises from falling back to the relay and rejoining the room.
+                if (wasDirect && _directConnectModule != null)
+                    _directConnectModule.ClientDisconnect ();
+
+                if (_clientProxy != null) {
+                    _clientProxy.Dispose ();
+                    _clientProxy = null;
+                }
+
+                _cachedHostID = null;
+
+                // Mirror blocks its own client shutdown until the transport
+                // reports the disconnect. Without this, NetworkClient stays in
+                // ConnectState.Disconnecting and StopClient() never returns the
+                // player to the offline scene.
+                if (wasClient)
+                    OnClientDisconnected?.Invoke ();
+            } finally {
+                _intentionalDisconnect = false;
             }
-
-            // if (_directConnectModule != null) _directConnectModule.ClientDisconnect(); //Commented due to breaking reconnection ability
-
-            // Clean up state
-            _directConnected = false;
-            _cachedHostID = null;
         }
 
         public override void ClientSend (ArraySegment<byte> segment, int channelId) {

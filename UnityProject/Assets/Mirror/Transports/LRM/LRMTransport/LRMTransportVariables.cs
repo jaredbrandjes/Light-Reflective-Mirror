@@ -64,6 +64,14 @@ namespace LightReflectiveMirror {
         }
 
         private bool _directConnected = false;
+
+        // Set while we are intentionally tearing down a client connection.
+        // Callbacks arriving from the direct connect transport during teardown
+        // must not be mistaken for a *failed* direct connection, which would
+        // trigger the relay fallback in DirectDisconnected() and silently
+        // rejoin the room we just left.
+        private bool _intentionalDisconnect = false;
+
         private bool _isAuthenticated = false;
         private int _currentMemberId;
         private bool _callbacksInitialized = false;

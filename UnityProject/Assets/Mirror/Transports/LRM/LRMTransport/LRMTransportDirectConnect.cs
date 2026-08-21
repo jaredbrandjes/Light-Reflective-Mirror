@@ -47,13 +47,14 @@ namespace LightReflectiveMirror
                 _directConnected = false;
                 OnClientDisconnected?.Invoke();
             }
-            else
+            else if (!_intentionalDisconnect && !string.IsNullOrEmpty(_cachedHostID))
             {
                 int pos = 0;
                 _directConnected = false;
                 _clientSendBuffer.WriteByte(ref pos, (byte)OpCodes.JoinServer);
                 _clientSendBuffer.WriteString(ref pos, _cachedHostID);
                 _clientSendBuffer.WriteBool(ref pos, false); // Direct failed, use relay
+                _clientSendBuffer.WriteString(ref pos, GetLocalIp() ?? "0.0.0.0");
 
                 _isClient = true;
 
