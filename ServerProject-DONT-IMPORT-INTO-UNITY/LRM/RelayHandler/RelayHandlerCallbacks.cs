@@ -53,34 +53,15 @@ namespace LightReflectiveMirror {
                     case OpCodes.CreateRoom:
                         try {
                             int _maxPlayers = data.ReadInt (ref pos);
-                            Program.WriteLogMessage ($"Debug CreateRoom: maxPlayers={_maxPlayers}");
-
                             string _serverName = data.ReadString (ref pos);
-                            Program.WriteLogMessage ($"Debug CreateRoom: serverName={_serverName}");
-
                             bool _isPublic = data.ReadBool (ref pos);
-                            Program.WriteLogMessage ($"Debug CreateRoom: isPublic={_isPublic}");
-
                             string _serverData = data.ReadString (ref pos);
-                            Program.WriteLogMessage ($"Debug CreateRoom: serverData={_serverData}");
-
                             bool _useDirectConnect = data.ReadBool (ref pos);
-                            Program.WriteLogMessage ($"Debug CreateRoom: useDirectConnect={_useDirectConnect}");
-
                             string _hostLocalIP = data.ReadString (ref pos);
-                            Program.WriteLogMessage ($"Debug CreateRoom: hostLocalIP={_hostLocalIP}");
-
                             bool _useNatPunch = data.ReadBool (ref pos);
-                            Program.WriteLogMessage ($"Debug CreateRoom: useNatPunch={_useNatPunch}");
-
                             int _port = data.ReadInt (ref pos);
-                            Program.WriteLogMessage ($"Debug CreateRoom: port={_port}");
-
                             int _appId = data.ReadInt (ref pos);
-                            Program.WriteLogMessage ($"Debug CreateRoom: appId={_appId}");
-
                             string _version = data.ReadString (ref pos);
-                            Program.WriteLogMessage ($"Debug CreateRoom: version={_version}");
 
                             CreateRoom (clientId, _maxPlayers, _serverName, _isPublic, _serverData,
                                 _useDirectConnect, _hostLocalIP, _useNatPunch, _port, _appId, _version);
@@ -131,22 +112,6 @@ namespace LightReflectiveMirror {
                             plyRoom.maxPlayers = data.ReadInt (ref pos);
 
                         Endpoint.RoomsModified ();
-                        break;
-                    case OpCodes.RecreateRoom:
-                        string serverId = data.ReadString (ref pos);
-                        int maxPlayers = data.ReadInt (ref pos);
-                        string serverName = data.ReadString (ref pos);
-                        bool isPublic = data.ReadBool (ref pos);
-                        string serverData = data.ReadString (ref pos);
-                        bool useDirectConnect = data.ReadBool (ref pos);
-                        string hostLocalIP = data.ReadString (ref pos);
-                        bool useNatPunch = data.ReadBool (ref pos);
-                        int port = data.ReadInt (ref pos);
-                        int appId = data.ReadInt (ref pos);
-                        string version = data.ReadString (ref pos);
-
-                        HandleRecreateRoom (clientId, serverId, maxPlayers, serverName, isPublic, serverData, useDirectConnect, hostLocalIP, useNatPunch, port, appId, version);
-                        Program.WriteLogMessage ($"Client [{clientId}] [{opcode}] - ServerId: [{serverId}] | Rooms [{string.Join (',', _cachedRooms.Keys)}]");
                         break;
                 }
             } catch {

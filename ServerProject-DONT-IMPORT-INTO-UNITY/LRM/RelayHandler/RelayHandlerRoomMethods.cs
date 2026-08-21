@@ -28,8 +28,7 @@ namespace LightReflectiveMirror {
             bool useNatPunch,
             int port,
             int appId,
-            string version,
-            string providedServerId = null) {
+            string version) {
             LeaveRoom (clientId);
             Program.instance.NATConnections.TryGetValue (clientId, out IPEndPoint hostIP);
 
@@ -42,7 +41,7 @@ namespace LightReflectiveMirror {
                 appId = appId,
                 version = version,
                 clients = new List<int> (),
-                serverId = providedServerId ?? GetRandomServerID (),
+                serverId = GetRandomServerID (),
                 hostIP = hostIP,
                 hostLocalIP = hostLocalIP,
                 supportsDirectConnect = hostIP != null && useDirectConnect,
@@ -68,43 +67,6 @@ namespace LightReflectiveMirror {
             Endpoint.RoomsModified ();
         }
 
-        private void HandleRecreateRoom (int clientId, string serverId, int maxPlayers, string serverName, bool isPublic, string serverData, bool useDirectConnect, string hostLocalIP, bool useNatPunch, int port, int appId, string version) {
-            Console.WriteLine ($"[{DateTime.UtcNow}] LRM Server | Attempting to recreate room with ID: {serverId}");
-
-            if (_cachedRooms.TryGetValue (serverId, out Room existingRoom)) {
-                // Update existing room
-                existingRoom.hostId = clientId;
-                existingRoom.maxPlayers = maxPlayers;
-                existingRoom.serverName = serverName;
-                existingRoom.isPublic = isPublic;
-                existingRoom.serverData = serverData;
-                existingRoom.appId = appId;
-                existingRoom.version = version;
-                existingRoom.clients.Clear ();
-                existingRoom.hostLocalIP = hostLocalIP;
-                existingRoom.supportsDirectConnect = useDirectConnect;
-                existingRoom.port = port;
-                existingRoom.useNATPunch = useNatPunch;
-
-                _cachedClientRooms[clientId] = existingRoom;
-
-                SendRoomCreatedResponse (clientId, serverId);
-                Console.WriteLine ($"[{DateTime.UtcNow}] LRM Server | Room recreated successfully with ID: {serverId}");
-            } else {
-                // Attempt to create a new room with the provided server ID
-                try {
-                    CreateRoom (clientId, maxPlayers, serverName, isPublic, serverData, useDirectConnect, hostLocalIP, useNatPunch, port, appId, version, serverId);
-                    Console.WriteLine ($"[{DateTime.UtcNow}] LRM Server | New room created with provided ID: {serverId}");
-                } catch (Exception e) {
-                    Console.WriteLine ($"[{DateTime.UtcNow}] LRM Server | Failed to create room with ID {serverId}: {e.Message}");
-                    SendRecreateRoomFailedResponse (clientId, $"Failed to create room: {e.Message}");
-                    return;
-                }
-            }
-
-            Endpoint.RoomsModified ();
-        }
-
         private void SendRoomCreatedResponse (int clientId, string serverId) {
             int pos = 0;
             byte[] sendBuffer = _sendBuffers.Rent (5);
@@ -116,16 +78,6 @@ namespace LightReflectiveMirror {
             _sendBuffers.Return (sendBuffer);
         }
 
-        private void SendRecreateRoomFailedResponse (int clientId, string reason) {
-            int pos = 0;
-            byte[] sendBuffer = _sendBuffers.Rent (5);
-
-            sendBuffer.WriteByte (ref pos, (byte) OpCodes.RecreateRoomFailed);
-            sendBuffer.WriteString (ref pos, reason);
-
-            Program.transport.ServerSend (clientId, new ArraySegment<byte> (sendBuffer, 0, pos), 0);
-            _sendBuffers.Return (sendBuffer);
-        }
 
         /// <summary>
         /// Attempts to join a room for a client.
