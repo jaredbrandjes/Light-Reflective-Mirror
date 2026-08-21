@@ -23,7 +23,6 @@ namespace LightReflectiveMirror {
 
             if (_directConnectModule != null) {
                 if (useNATPunch && !_directConnectModule.SupportsNATPunch ()) {
-                    Debug.LogWarning ("LRM | NATPunch is turned on but the transport used does not support it. It will be disabled.");
                     useNATPunch = false;
                 }
             }
@@ -44,7 +43,7 @@ namespace LightReflectiveMirror {
             clientToServerTransport.OnClientConnected = OnConnectedToRelay;
             clientToServerTransport.OnClientDataReceived = DataReceived;
             clientToServerTransport.OnClientDisconnected = Disconnected;
-            clientToServerTransport.OnClientError = (transportError, reason) => Debug.LogError ($"OnClientError: {transportError} Reason: {reason}");
+            clientToServerTransport.OnClientError = (transportError, reason) => Debug.LogError ($"[LRM] OnClientError: {transportError} Reason: {reason}");
         }
 
         private void Disconnected () {
@@ -63,14 +62,10 @@ namespace LightReflectiveMirror {
             if (!useLoadBalancer) {
                 if (!_connectedToRelay) {
                     Connect (serverIP, serverPort);
-                } else {
-                    Debug.LogWarning ("LRM | Already connected to relay!");
                 }
             } else {
                 if (!_connectedToRelay) {
                     StartCoroutine (RelayConnect ());
-                } else {
-                    Debug.LogWarning ("LRM | Already connected to relay!");
                 }
             }
         }
@@ -100,18 +95,23 @@ namespace LightReflectiveMirror {
 
         private void SendHeartbeat () {
             if (_connectedToRelay) {
-                // Send a blank message with just the opcode 200, which is heartbeat
+                // Send a blank message with just the opcode for heartbeat
                 int pos = 0;
-                _clientSendBuffer.WriteByte (ref pos, 200);
+                _clientSendBuffer.WriteByte (ref pos, (byte) OpCodes.Heartbeat);
 
-                clientToServerTransport.ClientSend (new ArraySegment<byte> (_clientSendBuffer, 0, pos), 0);
+                try {
+                    clientToServerTransport.ClientSend (new ArraySegment<byte> (_clientSendBuffer, 0, pos), 0);
+                } catch (Exception e) {
+                    Debug.LogError ($"[LRM] Failed to send heartbeat: {e.Message}");
+                }
 
                 // If NAT Puncher is initialized, send heartbeat on that as well.
                 try {
-                    if (_NATPuncher != null)
+                    if (_NATPuncher != null && _relayPuncherIP != null) {
                         _NATPuncher.Send (new byte[] { 0 }, 1, _relayPuncherIP);
+                    }
                 } catch (Exception e) {
-                    print (e);
+                    Debug.LogError ($"[LRM] NAT heartbeat failed: {e.Message}");
                 }
 
                 // Check if any server-side proxies havent been used in 10 seconds, and timeout if so.
@@ -130,8 +130,14 @@ namespace LightReflectiveMirror {
             try {
                 var data = segmentData.Array;
                 int pos = segmentData.Offset;
+
+                if (data == null) {
+                    Debug.LogError ("[LRM] Data array is null!");
+                    return;
+                }
+
                 if (pos >= data.Length) {
-                    Debug.LogError ($"LRM: Invalid offset position {pos} for data length {data.Length}");
+                    Debug.LogError ($"[LRM] Invalid offset position {pos} for data length {data.Length}");
                     return;
                 }
 
@@ -140,35 +146,33 @@ namespace LightReflectiveMirror {
 
                 switch (opcode) {
                     case OpCodes.Authenticated:
-                        // Server authenticated us! That means we are fully ready to host and join servers.
                         serverStatus = "Authenticated! Good to go!";
                         _isAuthenticated = true;
                         RequestServerList ();
                         break;
 
                     case OpCodes.AuthenticationRequest:
-                        // Server requested that we send an authentication request, lets send our auth key.
                         serverStatus = "Sent authentication to relay...";
                         SendAuthKey ();
                         break;
 
                     case OpCodes.GetData:
-                        // Someone sent us a packet from their mirror over the relay
                         var recvData = data.ReadBytes (ref pos);
 
-                        // If we are the server and the client is registered, invoke the callback
                         if (IsServer) {
-                            if (_connectedRelayClients.TryGetByFirst (data.ReadInt (ref pos), out int clientID))
+                            int senderId = data.ReadInt (ref pos);
+                            if (_connectedRelayClients.TryGetByFirst (senderId, out int clientID)) {
                                 OnServerDataReceived?.Invoke (clientID, new ArraySegment<byte> (recvData), channel);
+                            }
                         }
 
-                        // If we are the client, invoke the callback
-                        if (IsClient)
+                        if (IsClient) {
                             OnClientDataReceived?.Invoke (new ArraySegment<byte> (recvData), channel);
+                        }
+
                         break;
 
                     case OpCodes.ServerLeft:
-                        // Called when server was closed.
                         if (IsClient) {
                             IsClient = false;
                             OnClientDisconnected?.Invoke ();
@@ -177,9 +181,7 @@ namespace LightReflectiveMirror {
                         break;
 
                     case OpCodes.PlayerDisconnected:
-                        // Called when another player left the room.
                         if (IsServer) {
-                            // Get their client ID and invoke the mirror callback
                             int user = data.ReadInt (ref pos);
                             if (_connectedRelayClients.TryGetByFirst (user, out int clientID)) {
                                 OnServerDisconnected?.Invoke (clientID);
@@ -190,20 +192,17 @@ namespace LightReflectiveMirror {
                         break;
 
                     case OpCodes.RoomCreated:
-                        // We successfully created the room, the server also gave us the serverId of the room!
                         serverId = data.ReadString (ref pos);
                         break;
 
                     case OpCodes.ServerJoined:
-                        // Called when a player joins the room or when we joined a room.
                         int clientId = data.ReadInt (ref pos);
+
                         if (IsClient) {
-                            // We successfully joined a room, let mirror know.
                             OnClientConnected?.Invoke ();
                         }
 
                         if (IsServer) {
-                            // A client joined our room, let mirror know and setup their ID in the dictionary.
                             _connectedRelayClients.Add (clientId, _currentMemberId);
                             OnServerConnected?.Invoke (_currentMemberId);
                             _currentMemberId++;
@@ -212,32 +211,31 @@ namespace LightReflectiveMirror {
                         break;
 
                     case OpCodes.DirectConnectIP:
-                        // Either a client is trying to join us via NAT Punch, or we are trying to join a host over NAT punch/Direct connect.
                         var ip = data.ReadString (ref pos);
                         int port = data.ReadInt (ref pos);
                         bool attemptNatPunch = data.ReadBool (ref pos);
 
                         _directConnectEndpoint = new IPEndPoint (IPAddress.Parse (ip), port);
 
-                        // Both client and server will send data to each other to open the hole.
                         if (useNATPunch && attemptNatPunch) {
                             StartCoroutine (NATPunch (_directConnectEndpoint));
                         }
 
                         if (!IsServer) {
-                            // We arent the server, so lets tell the direct connect module to attempt a connection and initializing our middle man socket.
                             if (_clientProxy == null && useNATPunch && attemptNatPunch) {
                                 _clientProxy = new SocketProxy (_NATIP.Port - 1);
                                 _clientProxy.dataReceived += ClientProcessProxyData;
                             }
 
                             if (useNATPunch && attemptNatPunch) {
-                                if (ip == LOCALHOST)
+                                if (ip == LOCALHOST) {
                                     _directConnectModule.JoinServer (LOCALHOST, port + 1);
-                                else
+                                } else {
                                     _directConnectModule.JoinServer (LOCALHOST, _NATIP.Port - 1);
-                            } else
+                                }
+                            } else {
                                 _directConnectModule.JoinServer (ip, port);
+                            }
                         }
 
                         break;
@@ -245,40 +243,53 @@ namespace LightReflectiveMirror {
                     case OpCodes.RequestNATConnection:
                         // Called when the LRM node would like us to establish a NAT puncher connection. Its safe to ignore if NAT punch is disabled.
                         if (useNATPunch && GetLocalIp () != null && _directConnectModule != null) {
-                            byte[] initalData = new byte[150];
-                            int sendPos = 0;
+                            try {
+                                // Read data in the exact order the server sends it
+                                string natID = data.ReadString (ref pos);
+                                NATPunchtroughPort = data.ReadInt (ref pos);
 
-                            initalData.WriteBool (ref sendPos, true);
-                            initalData.WriteString (ref sendPos, data.ReadString (ref pos));
-                            NATPunchtroughPort = data.ReadInt (ref pos);
-
-                            if (_NATPuncher == null) {
-                                _NATPuncher = new UdpClient { ExclusiveAddressUse = false };
-                                while (true) {
-                                    try {
-                                        _NATIP = new IPEndPoint (IPAddress.Parse (GetLocalIp ()), UnityEngine.Random.Range (16000, 17000));
-                                        _NATPuncher.Client.SetSocketOption (SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                                        _NATPuncher.Client.Bind (_NATIP);
-                                        break;
-                                    } catch { } // Binding port is in use, keep trying :P
+                                // Create NAT puncher if needed
+                                if (_NATPuncher == null) {
+                                    SetupNATPuncher ();
                                 }
+
+                                // Resolve server address
+                                IPAddress serverAddr;
+                                if (!IPAddress.TryParse (serverIP, out serverAddr)) {
+                                    serverAddr = Dns.GetHostEntry (serverIP).AddressList[0];
+                                }
+
+                                _relayPuncherIP = new IPEndPoint (serverAddr, NATPunchtroughPort);
+
+                                // Prepare response data (matches server expectation)
+                                byte[] initialData = new byte[150];
+                                int sendPos = 0;
+                                initialData.WriteBool (ref sendPos, true); // Connection established flag
+                                initialData.WriteString (ref sendPos, natID); // Echo back the natID
+
+                                // Send NAT punch attempts (original approach)
+                                for (int attempts = 0; attempts < NAT_PUNCH_ATTEMPTS; attempts++) {
+                                    _NATPuncher.Send (initialData, sendPos, _relayPuncherIP);
+                                }
+
+                                // Start receiving (only once)
+                                _NATPuncher.BeginReceive (new AsyncCallback (RecvData), _NATPuncher);
+                            } catch (Exception ex) {
+                                Debug.LogError ($"[LRM] NAT setup failed - {ex.Message}");
                             }
-
-                            if (!IPAddress.TryParse (serverIP, out IPAddress serverAddr))
-                                serverAddr = Dns.GetHostEntry (serverIP).AddressList[0];
-
-                            _relayPuncherIP = new IPEndPoint (serverAddr, NATPunchtroughPort);
-
-                            for (int attempts = 0; attempts < NAT_PUNCH_ATTEMPTS; attempts++)
-                                _NATPuncher.Send (initalData, sendPos, _relayPuncherIP);
-
-                            _NATPuncher.BeginReceive (new AsyncCallback (RecvData), _NATPuncher);
                         }
 
                         break;
+
+                    case OpCodes.Heartbeat:
+                        // Heartbeat received, do nothing
+                        break;
+
+                    default:
+                        break;
                 }
             } catch (Exception e) {
-                Debug.LogError ($"LRM Error in DataReceived: {e.Message}\nStack: {e.StackTrace}");
+                Debug.LogError ($"[LRM] Error in DataReceived: {e.Message}\nSegment: offset={segmentData.Offset}, count={segmentData.Count}");
             }
         }
 
@@ -390,7 +401,8 @@ namespace LightReflectiveMirror {
             UpdateRoomData = 18,
             ServerConnectionData = 19,
             RequestNATConnection = 20,
-            DirectConnectIP = 21
+            DirectConnectIP = 21,
+            Heartbeat = 200
         }
 
         private static string GetLocalIp () {
@@ -403,6 +415,30 @@ namespace LightReflectiveMirror {
 
             return null;
         }
+
+        private void SetupNATPuncher () {
+            try {
+                _NATPuncher = new UdpClient { ExclusiveAddressUse = false };
+
+                // Simple port binding (original approach)
+                while (true) {
+                    try {
+                        _NATIP = new IPEndPoint (IPAddress.Parse (GetLocalIp ()), UnityEngine.Random.Range (16000, 17000));
+                        _NATPuncher.Client.SetSocketOption (SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                        _NATPuncher.Client.Bind (_NATIP);
+                        break;
+                    } catch {
+                        // Binding port is in use, keep trying
+                    }
+                }
+            } catch (Exception ex) {
+                Debug.LogError ($"[LRM] Failed to create NAT puncher: {ex.Message}");
+                _NATPuncher?.Dispose ();
+                _NATPuncher = null;
+                throw;
+            }
+        }
+
     }
 
     [Serializable]
