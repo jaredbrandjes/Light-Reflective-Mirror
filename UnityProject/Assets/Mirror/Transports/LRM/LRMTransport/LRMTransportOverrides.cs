@@ -196,11 +196,21 @@ namespace LightReflectiveMirror {
             // If we have direct connect module, and our local IP isnt null, tell server
             _clientSendBuffer.WriteBool (ref pos, _directConnectModule != null ? GetLocalIp () != null : false);
 
-            if (_directConnectModule != null && GetLocalIp () != null && useNATPunch) {
+            if (_directConnectModule != null && GetLocalIp () != null && useNATPunch && _NATIP != null) {
                 _clientSendBuffer.WriteString (ref pos, GetLocalIp ());
-                _directConnectModule.StartServer (useNATPunch ? _NATIP.Port + 1 : -1);
-            } else
+                _directConnectModule.StartServer (_NATIP.Port + 1);
+            } else {
+                if (useNATPunch && _NATIP == null && _directConnectModule != null && GetLocalIp () != null) {
+                    // The relay never sent RequestNATConnection, so there is no puncher
+                    // socket to derive the direct connect port from. Usually means the
+                    // node has EnableNATPunchtroughServer off. Previously this threw a
+                    // NullReferenceException out of ServerStart and hosting failed.
+                    Debug.LogWarning ("[LRM] NAT punch is enabled but the relay never requested a NAT connection - is EnableNATPunchtroughServer off on the node? Hosting without NAT punch.");
+                    useNATPunch = false;
+                }
+
                 _clientSendBuffer.WriteString (ref pos, "0.0.0.0");
+            }
 
             if (useNATPunch) {
                 _clientSendBuffer.WriteBool (ref pos, true);

@@ -72,6 +72,10 @@ namespace LightReflectiveMirror {
         // rejoin the room we just left.
         private bool _intentionalDisconnect = false;
 
+        // The relay can send RequestNATConnection more than once; this keeps us
+        // from stacking multiple pending BeginReceive calls on the same socket.
+        private bool _natReceiveStarted = false;
+
         private bool _isAuthenticated = false;
         private int _currentMemberId;
         private bool _callbacksInitialized = false;

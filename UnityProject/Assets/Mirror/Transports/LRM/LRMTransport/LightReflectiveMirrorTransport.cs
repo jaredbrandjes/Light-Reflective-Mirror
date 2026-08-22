@@ -23,8 +23,11 @@ namespace LightReflectiveMirror {
 
             if (_directConnectModule != null) {
                 if (useNATPunch && !_directConnectModule.SupportsNATPunch ()) {
+                    Debug.LogWarning ("[LRM] NAT punch is enabled but the direct connect transport does not support it. Disabling NAT punch. Use KcpTransport (or Ignorance) as the direct connect transport if you need it.");
                     useNATPunch = false;
                 }
+            } else if (useNATPunch && Application.platform != RuntimePlatform.WebGLPlayer) {
+                Debug.LogWarning ("[LRM] NAT punch is enabled but no LRMDirectConnectModule component was found on this GameObject. NAT punch and direct connect will be inactive.");
             }
 
             SetupCallbacks ();
@@ -272,11 +275,22 @@ namespace LightReflectiveMirror {
                                     _NATPuncher.Send (initialData, sendPos, _relayPuncherIP);
                                 }
 
-                                // Start receiving (only once)
-                                _NATPuncher.BeginReceive (new AsyncCallback (RecvData), _NATPuncher);
+                                // The relay can send RequestNATConnection more than once.
+                                // Only ever have one receive pending on the socket.
+                                if (!_natReceiveStarted) {
+                                    _natReceiveStarted = true;
+                                    _NATPuncher.BeginReceive (new AsyncCallback (RecvData), _NATPuncher);
+                                }
                             } catch (Exception ex) {
                                 Debug.LogError ($"[LRM] NAT setup failed - {ex.Message}");
                             }
+                        } else if (useNATPunch) {
+                            // Relay asked us to punch but we cannot. Say why - this is
+                            // otherwise a silent failure that looks like "NAT punch is broken".
+                            if (_directConnectModule == null)
+                                Debug.LogWarning ("[LRM] Relay requested a NAT connection but no LRMDirectConnectModule is present. Ignoring.");
+                            else if (GetLocalIp () == null)
+                                Debug.LogWarning ("[LRM] Relay requested a NAT connection but no local IPv4 address could be resolved. Ignoring.");
                         }
 
                         break;
