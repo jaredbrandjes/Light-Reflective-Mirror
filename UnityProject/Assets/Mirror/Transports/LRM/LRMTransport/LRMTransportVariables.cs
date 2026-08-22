@@ -22,6 +22,7 @@ namespace LightReflectiveMirror {
         public bool useNATPunch = false;
         public int NATPunchtroughPort = -1;
         private const int NAT_PUNCH_ATTEMPTS = 3;
+        private const int NAT_PORT_BIND_ATTEMPTS = 100;
 
         // LLB variables (LRM Load Balancer)
         public bool useLoadBalancer = false;
@@ -72,8 +73,9 @@ namespace LightReflectiveMirror {
         // rejoin the room we just left.
         private bool _intentionalDisconnect = false;
 
-        // The relay can send RequestNATConnection more than once; this keeps us
-        // from stacking multiple pending BeginReceive calls on the same socket.
+        // Whether a NAT receive is currently pending. The relay sends
+        // RequestNATConnection once per connection, so on a reconnect this tells us
+        // whether the existing chain is still alive or needs re-arming.
         private bool _natReceiveStarted = false;
 
         private bool _isAuthenticated = false;

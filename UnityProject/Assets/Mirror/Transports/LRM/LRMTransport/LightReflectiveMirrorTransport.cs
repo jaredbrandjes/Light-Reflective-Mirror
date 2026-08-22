@@ -26,7 +26,9 @@ namespace LightReflectiveMirror {
                     Debug.LogWarning ("[LRM] NAT punch is enabled but the direct connect transport does not support it. Disabling NAT punch. Use KcpTransport (or Ignorance) as the direct connect transport if you need it.");
                     useNATPunch = false;
                 }
-            } else if (useNATPunch && Application.platform != RuntimePlatform.WebGLPlayer) {
+            } else if (useNATPunch) {
+                // WebGL already cleared useNATPunch above, so reaching here means a
+                // non-WebGL build that asked for NAT punch without the module.
                 Debug.LogWarning ("[LRM] NAT punch is enabled but no LRMDirectConnectModule component was found on this GameObject. NAT punch and direct connect will be inactive.");
             }
 
@@ -275,12 +277,10 @@ namespace LightReflectiveMirror {
                                     _NATPuncher.Send (initialData, sendPos, _relayPuncherIP);
                                 }
 
-                                // The relay can send RequestNATConnection more than once.
-                                // Only ever have one receive pending on the socket.
-                                if (!_natReceiveStarted) {
-                                    _natReceiveStarted = true;
-                                    _NATPuncher.BeginReceive (new AsyncCallback (RecvData), _NATPuncher);
-                                }
+                                // Only one receive pending at a time. If a previous
+                                // chain died on a socket error this re-arms it.
+                                if (!_natReceiveStarted)
+                                    BeginNATReceive ();
                             } catch (Exception ex) {
                                 Debug.LogError ($"[LRM] NAT setup failed - {ex.Message}");
                             }
@@ -430,20 +430,71 @@ namespace LightReflectiveMirror {
             return null;
         }
 
+        /// <summary>
+        /// Releases every socket the NAT/direct-connect path owns and clears the
+        /// state derived from them, so a later session starts clean instead of
+        /// reusing a dead receive chain or a stale port.
+        /// </summary>
+        private void TeardownNATPuncher () {
+            _natReceiveStarted = false;
+
+            if (_NATPuncher != null) {
+                try {
+                    _NATPuncher.Dispose ();
+                } catch (Exception e) {
+                    Debug.LogWarning ($"[LRM] NAT puncher dispose failed: {e.Message}");
+                }
+
+                _NATPuncher = null;
+            }
+
+            _NATIP = null;
+            _relayPuncherIP = null;
+
+            if (_clientProxy != null) {
+                _clientProxy.Dispose ();
+                _clientProxy = null;
+            }
+
+            var proxyKeys = new List<IPEndPoint> (_serverProxies.GetAllKeys ());
+
+            for (int i = 0; i < proxyKeys.Count; i++) {
+                _serverProxies.GetByFirst (proxyKeys[i]).Dispose ();
+                _serverProxies.Remove (proxyKeys[i]);
+            }
+        }
+
         private void SetupNATPuncher () {
             try {
+                string localIp = GetLocalIp ();
+
+                if (localIp == null)
+                    throw new InvalidOperationException ("no local IPv4 address could be resolved");
+
                 _NATPuncher = new UdpClient { ExclusiveAddressUse = false };
 
-                // Simple port binding (original approach)
-                while (true) {
+                // Pick a free port in 16000-17000. Bounded: an unbounded retry here
+                // hangs the Unity main thread outright if binding never succeeds.
+                Exception lastBindError = null;
+                bool bound = false;
+
+                for (int attempt = 0; attempt < NAT_PORT_BIND_ATTEMPTS; attempt++) {
                     try {
-                        _NATIP = new IPEndPoint (IPAddress.Parse (GetLocalIp ()), UnityEngine.Random.Range (16000, 17000));
+                        _NATIP = new IPEndPoint (IPAddress.Parse (localIp), UnityEngine.Random.Range (16000, 17000));
                         _NATPuncher.Client.SetSocketOption (SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                         _NATPuncher.Client.Bind (_NATIP);
+                        bound = true;
                         break;
-                    } catch {
-                        // Binding port is in use, keep trying
+                    } catch (Exception bindError) {
+                        // Port in use, keep trying.
+                        lastBindError = bindError;
                     }
+                }
+
+                if (!bound) {
+                    _NATIP = null;
+                    throw new InvalidOperationException (
+                        $"could not bind a NAT puncher port in {NAT_PORT_BIND_ATTEMPTS} attempts - last error: {lastBindError?.Message}");
                 }
             } catch (Exception ex) {
                 Debug.LogError ($"[LRM] Failed to create NAT puncher: {ex.Message}");

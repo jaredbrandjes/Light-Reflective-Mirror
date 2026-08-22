@@ -193,26 +193,31 @@ namespace LightReflectiveMirror {
             _clientSendBuffer.WriteBool (ref pos, isPublicServer);
             _clientSendBuffer.WriteString (ref pos, extraServerData);
 
-            // If we have direct connect module, and our local IP isnt null, tell server
-            _clientSendBuffer.WriteBool (ref pos, _directConnectModule != null ? GetLocalIp () != null : false);
+            // Resolve once - GetLocalIp() does a DNS lookup on every call.
+            string localIp = GetLocalIp ();
+            bool canDirectConnect = _directConnectModule != null && localIp != null;
 
-            if (_directConnectModule != null && GetLocalIp () != null && useNATPunch && _NATIP != null) {
-                _clientSendBuffer.WriteString (ref pos, GetLocalIp ());
+            // NAT punch needs the puncher socket, which only exists once the relay
+            // has sent RequestNATConnection. Decide per-host attempt rather than
+            // mutating the serialized useNATPunch field, so a later host attempt
+            // can still punch once that message has arrived.
+            bool natPunchActive = canDirectConnect && useNATPunch && _NATIP != null;
+
+            if (canDirectConnect && useNATPunch && _NATIP == null) {
+                Debug.LogWarning ("[LRM] Hosting without NAT punch: the relay has not requested a NAT connection yet. If this persists, check EnableNATPunchtroughServer on the node.");
+            }
+
+            // If we have direct connect module, and our local IP isnt null, tell server
+            _clientSendBuffer.WriteBool (ref pos, canDirectConnect);
+
+            if (natPunchActive) {
+                _clientSendBuffer.WriteString (ref pos, localIp);
                 _directConnectModule.StartServer (_NATIP.Port + 1);
             } else {
-                if (useNATPunch && _NATIP == null && _directConnectModule != null && GetLocalIp () != null) {
-                    // The relay never sent RequestNATConnection, so there is no puncher
-                    // socket to derive the direct connect port from. Usually means the
-                    // node has EnableNATPunchtroughServer off. Previously this threw a
-                    // NullReferenceException out of ServerStart and hosting failed.
-                    Debug.LogWarning ("[LRM] NAT punch is enabled but the relay never requested a NAT connection - is EnableNATPunchtroughServer off on the node? Hosting without NAT punch.");
-                    useNATPunch = false;
-                }
-
                 _clientSendBuffer.WriteString (ref pos, "0.0.0.0");
             }
 
-            if (useNATPunch) {
+            if (natPunchActive) {
                 _clientSendBuffer.WriteBool (ref pos, true);
                 _clientSendBuffer.WriteInt (ref pos, 0);
             } else {
@@ -261,6 +266,12 @@ namespace LightReflectiveMirror {
             IsClient = false;
             IsServer = false;
             _connectedToRelay = false;
+
+            // Release the NAT puncher and proxies. Without this the UDP socket
+            // stays bound and _natReceiveStarted keeps the next session from
+            // arming a receive on the replacement socket.
+            TeardownNATPuncher ();
+
             clientToServerTransport.Shutdown ();
         }
     }
