@@ -30,7 +30,10 @@ in jaredbrandjes' fork. **It is not a drop-in upgrade from V14** — see
 - **Fixed:** the NAT puncher bound the first address `Dns.GetHostEntry` returned,
   which on any machine with VirtualBox, Hyper-V, WSL, Docker or a VPN is often a
   virtual adapter with no route.
-- NAT punch and direct connect are experimental — see the section below.
+- **Fixed:** NAT punch and direct connect never completed a handshake on Mirror 93.
+  `OnServerConnectedWithAddress` was unassigned on the direct transport, so the
+  host threw and disconnected the instant a client authenticated. See
+  [NAT punch and direct connect](#nat-punch-and-direct-connect).
 - Property-based `IsServer` / `IsClient` API on the transport.
 - Bounds checking and data validation on inbound relay messages.
 - CI restored — both workflows had been failing on retired action versions.
@@ -45,36 +48,46 @@ Light Reflective Mirror is a transport for Mirror Networking which relays networ
 * Built in server list!
 * Relay password to stop other games from stealing your precious relay!
 * Relay supports connecting users without them needing to port forward!
-* NAT Punchtrough (Full Cone, Restricted Cone, and Port Restricted Cone) — **experimental, see below**
-* Direct Connecting — **experimental, see below**
+* NAT Punchtrough (Full Cone, Restricted Cone, and Port Restricted Cone)
+* Direct Connecting
 * Load Balancing with multi-relay setup
 
-## NAT punch and direct connect status
+## NAT punch and direct connect
 
-**Experimental. `useNATPunch` is off by default and should stay off unless you
-are testing it.** Relaying is the supported path.
+Working as of V16, and fixed in this release. It was broken for everyone on
+Mirror 93.
 
-As of V16 the direct KCP handshake does not complete over LRM's proxy pair. It
-was tested on one machine, across one LAN, and between two different public IPs
-with the host on a mobile hotspot. The direct connection failed in all three.
+Set `useNATPunch` on the transport and add an `LRMDirectConnectModule` with a
+`KcpTransport` assigned as its direct connect transport. Peers that can punch
+talk to each other directly; the relay is used only for matchmaking and for
+peers that cannot.
 
-Enabling `useNATPunch` is safe but currently pointless:
+Verified across three topologies: both peers on one machine, both on one LAN,
+and on two different public IPs with the host on a mobile hotspot.
 
-| | |
-|---|---|
-| Join succeeds | Yes — via relay fallback |
-| Both players replicate | Yes |
-| Disconnect / reconnect | Yes |
-| Traffic goes peer-to-peer | **No** — it relays |
-| Cost of enabling it | ~10s delay on join while the direct attempt times out |
+### What was wrong
 
-The host also logs `[KCP] Server: RawSend invalid connectionId=...` warnings
-while a client joins. These are the host's direct-connect KCP server reacting
-to the abandoned attempt. They are noise, not a fault.
+Mirror 93 deprecated `Transport.OnServerConnected` in favour of
+`OnServerConnectedWithAddress` and does not forward between them. kcp2k raises
+only the new one, with an unguarded `.Invoke`, and `LRMDirectConnectModule`
+never assigned it — so it was always null on the host's direct-connect
+transport.
 
-Prior to V16 a failed direct connection prevented the client from joining at
-all, because the relay answered the fallback with `ServerLeft`. That is fixed;
-failure now degrades to relaying.
+The host authenticated the joining client, queued its reply, threw a
+`NullReferenceException` from that invoke, and kcp2k's catch-all turned it into
+a disconnect in the same tick. The reply never left the host, so the client
+timed out after 10 seconds and fell back to relaying. Both log paths that would
+have shown it default to off.
+
+Relay-only play was never affected, because LRM's own transport raises the
+deprecated callback and `NetworkServer` still subscribes to it.
+
+### If a direct connection fails
+
+It falls back to the relay and the client still joins. Before V16 it did not:
+the relay answered the fallback with `ServerLeft`, which killed the client
+outright. Set `Show Debug Logs` on the direct connect module to see which path
+a client took.
 
 ## How does it work?
 
@@ -95,10 +108,11 @@ shipped client must be updated together.**
   `TransportClass: Telepathy.TelepathyTransport` will fail at startup. KCP and
   SimpleWeb are unaffected.
 - ❌ **Mirror 81.4.0 → 93.0.0 on the Unity side.** This is a 12-major-version jump for
-  your whole project, not just the LRM folder — revalidate accordingly. Note that
-  `Transport.OnServerConnected` is deprecated in Mirror 93 in favour of
-  `OnServerConnectedWithAddress`; LRM still uses the former, which Mirror continues
-  to support.
+  your whole project, not just the LRM folder — revalidate accordingly. If you
+  have your own transport code, note that `Transport.OnServerConnected` is
+  deprecated in favour of `OnServerConnectedWithAddress` and nothing forwards
+  between them; kcp2k raises only the new one. That caught LRM's own direct
+  connect module, see [NAT punch and direct connect](#nat-punch-and-direct-connect).
 - ⚠️ **Relay runtime is now .NET 8** (was .NET 5). Docker users are unaffected — the
   image handles it. Bare VPS/systemd deploys need the .NET 8 runtime installed first.
 - ✅ **The LRM protocol itself is unchanged.** Opcodes 0–21 and their payloads are
