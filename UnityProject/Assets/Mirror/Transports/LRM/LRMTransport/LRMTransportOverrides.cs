@@ -186,12 +186,7 @@ namespace LightReflectiveMirror {
             _currentMemberId = 1;
             _connectedDirectClients = new BiDictionary<int, int> ();
 
-            var keys = new List<IPEndPoint> (_serverProxies.GetAllKeys ());
-
-            for (int i = 0; i < keys.Count; i++) {
-                _serverProxies.GetByFirst (keys[i]).Dispose ();
-                _serverProxies.Remove (keys[i]);
-            }
+            ClearServerProxies ();
 
             int pos = 0;
             _clientSendBuffer.WriteByte (ref pos, (byte) OpCodes.CreateRoom);
@@ -257,12 +252,7 @@ namespace LightReflectiveMirror {
                 if (_directConnectModule != null)
                     _directConnectModule.StopServer ();
 
-                var keys = new List<IPEndPoint> (_serverProxies.GetAllKeys ());
-
-                for (int i = 0; i < keys.Count; i++) {
-                    _serverProxies.GetByFirst (keys[i]).Dispose ();
-                    _serverProxies.Remove (keys[i]);
-                }
+                ClearServerProxies ();
             }
         }
 

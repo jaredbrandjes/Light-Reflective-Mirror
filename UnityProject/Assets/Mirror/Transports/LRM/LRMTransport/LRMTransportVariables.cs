@@ -105,6 +105,13 @@ namespace LightReflectiveMirror {
         private IPEndPoint _directConnectEndpoint;
         private SocketProxy _clientProxy;
         private BiDictionary<IPEndPoint, SocketProxy> _serverProxies = new BiDictionary<IPEndPoint, SocketProxy> ();
+
+        // _serverProxies is touched from the main thread (the heartbeat sweep,
+        // ServerStart/ServerStop, teardown) AND from NAT receive callbacks on
+        // threadpool threads. Several punch datagrams arrive at once, so without
+        // this the check-then-add in RecvData races and Dictionary.Add throws
+        // "An item with the same key has already been added".
+        private readonly object _serverProxyLock = new object ();
         private BiDictionary<int, int> _connectedRelayClients = new BiDictionary<int, int> ();
         private BiDictionary<int, int> _connectedDirectClients = new BiDictionary<int, int> ();
         private bool _serverListUpdated = false;

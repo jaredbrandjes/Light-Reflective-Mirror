@@ -140,25 +140,37 @@ namespace LightReflectiveMirror
 
             if (_isServer)
             {
-                if (_serverProxies.TryGetByFirst(newClientEP, out SocketProxy foundProxy))
+                SocketProxy proxy = null;
+                bool created = false;
+
+                // Check-and-add must be atomic: the client sends a burst of punch
+                // packets, so several of these callbacks run concurrently for the
+                // same endpoint and would otherwise all try to create a proxy.
+                try
                 {
-                    if (data.Length > 2)
-                        foundProxy.RelayData(data, data.Length);
+                    lock (_serverProxyLock)
+                    {
+                        if (!_serverProxies.TryGetByFirst(newClientEP, out proxy))
+                        {
+                            proxy = new SocketProxy(natIP.Port + 1, newClientEP);
+                            proxy.dataReceived += ServerProcessProxyData;
+                            _serverProxies.Add(newClientEP, proxy);
+                            created = true;
+                        }
+                    }
                 }
-                else
+                catch (Exception e)
                 {
-                    try
-                    {
-                        var proxy = new SocketProxy(natIP.Port + 1, newClientEP);
-                        proxy.dataReceived += ServerProcessProxyData;
-                        _serverProxies.Add(newClientEP, proxy);
-                        proxy.Start();
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogError($"[LRM] Could not open a server proxy on port {natIP.Port + 1} for {newClientEP}: {e}");
-                    }
+                    Debug.LogError($"[LRM] Could not open a server proxy on port {natIP.Port + 1} for {newClientEP}: {e}");
+                    proxy = null;
                 }
+
+                // Started outside the lock so a blocking socket call cannot stall
+                // the main thread's sweep.
+                if (created)
+                    proxy.Start();
+                else if (proxy != null && data.Length > 2)
+                    proxy.RelayData(data, data.Length);
             }
 
             if (_isClient)

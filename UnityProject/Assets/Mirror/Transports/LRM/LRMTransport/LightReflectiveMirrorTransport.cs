@@ -131,12 +131,18 @@ namespace LightReflectiveMirror {
                 }
 
                 // Check if any server-side proxies havent been used in 10 seconds, and timeout if so.
-                var keys = new List<IPEndPoint> (_serverProxies.GetAllKeys ());
+                // Locked: NAT receive callbacks add proxies from threadpool threads.
+                lock (_serverProxyLock) {
+                    var keys = new List<IPEndPoint> (_serverProxies.GetAllKeys ());
 
-                for (int i = 0; i < keys.Count; i++) {
-                    if (DateTime.Now.Subtract (_serverProxies.GetByFirst (keys[i]).lastInteractionTime).TotalSeconds > 10) {
-                        _serverProxies.GetByFirst (keys[i]).Dispose ();
-                        _serverProxies.Remove (keys[i]);
+                    for (int i = 0; i < keys.Count; i++) {
+                        if (!_serverProxies.TryGetByFirst (keys[i], out SocketProxy timedOut))
+                            continue;
+
+                        if (DateTime.Now.Subtract (timedOut.lastInteractionTime).TotalSeconds > 10) {
+                            timedOut.Dispose ();
+                            _serverProxies.Remove (keys[i]);
+                        }
                     }
                 }
             }
@@ -627,11 +633,23 @@ namespace LightReflectiveMirror {
                 _clientProxy = null;
             }
 
-            var proxyKeys = new List<IPEndPoint> (_serverProxies.GetAllKeys ());
+            ClearServerProxies ();
+        }
 
-            for (int i = 0; i < proxyKeys.Count; i++) {
-                _serverProxies.GetByFirst (proxyKeys[i]).Dispose ();
-                _serverProxies.Remove (proxyKeys[i]);
+        /// <summary>
+        /// Disposes and drops every server-side proxy. Synchronised because NAT
+        /// receive callbacks add to _serverProxies from threadpool threads.
+        /// </summary>
+        private void ClearServerProxies () {
+            lock (_serverProxyLock) {
+                var proxyKeys = new List<IPEndPoint> (_serverProxies.GetAllKeys ());
+
+                for (int i = 0; i < proxyKeys.Count; i++) {
+                    if (_serverProxies.TryGetByFirst (proxyKeys[i], out SocketProxy proxy))
+                        proxy.Dispose ();
+
+                    _serverProxies.Remove (proxyKeys[i]);
+                }
             }
         }
 
