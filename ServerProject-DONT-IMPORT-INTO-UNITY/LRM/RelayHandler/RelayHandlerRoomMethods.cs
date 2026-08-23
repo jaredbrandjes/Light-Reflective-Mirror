@@ -92,7 +92,11 @@ namespace LightReflectiveMirror {
             if (_cachedRooms.ContainsKey (serverId)) {
                 var room = _cachedRooms[serverId];
 
-                if (room.clients.Count < room.maxPlayers) {
+                // currentPlayers counts the host, so gate on it rather than on
+                // clients.Count. Comparing the client list against maxPlayers let
+                // a room admit maxPlayers clients PLUS the host, which reported
+                // currentPlayers above maxPlayers and overfilled every room by one.
+                if (room.currentPlayers < room.maxPlayers) {
                     room.clients.Add (clientId);
                     _cachedClientRooms.Add (clientId, room);
 
