@@ -48,6 +48,11 @@ namespace LightReflectiveMirror {
         // Server hosting variables
         public string serverName = "My awesome server!";
         public string extraServerData = "Map 1";
+        /// <summary>
+        /// Maximum players in the room, counting the host. A dedicated server
+        /// (NetworkManager mode ServerOnly) is not counted, so this is the number
+        /// of clients that can join in that case.
+        /// </summary>
         public int maxServerPlayers = 10;
         public bool isPublicServer = true;
 

@@ -452,7 +452,13 @@ namespace LightReflectiveMirror {
                 _clientSendBuffer.WriteBool (ref pos, false);
                 _clientSendBuffer.WriteBool (ref pos, false);
                 _clientSendBuffer.WriteBool (ref pos, true);
-                _clientSendBuffer.WriteInt (ref pos, maxPlayers);
+
+                // Same room-creator adjustment as ServerStart, so a later update
+                // does not silently change what maxPlayers means.
+                bool creatorIsPlayer = NetworkManager.singleton == null
+                    || NetworkManager.singleton.mode != NetworkManagerMode.ServerOnly;
+
+                _clientSendBuffer.WriteInt (ref pos, creatorIsPlayer ? maxPlayers : maxPlayers + 1);
 
                 clientToServerTransport.ClientSend (new ArraySegment<byte> (_clientSendBuffer, 0, pos), 0);
             }
