@@ -18,21 +18,36 @@ namespace LightReflectiveMirror
         IPEndPoint _remoteEndpoint;
         bool _clientInitialRecv = false;
 
+        // Receiving deliberately does NOT start in the constructors. The callers
+        // wire up dataReceived afterwards, so a datagram arriving before that
+        // would be delivered to a null handler - and, in the remote overload,
+        // with a null _remoteEndpoint, which reaches ServerProcessProxyData and
+        // throws inside a threadpool callback. Call Start() once wired.
         public SocketProxy(int port, IPEndPoint remoteEndpoint)
         {
-            _udpClient = new UdpClient();
-            _udpClient.Connect(new IPEndPoint(IPAddress.Loopback, port));
-            _udpClient.BeginReceive(new AsyncCallback(RecvData), _udpClient);
-            lastInteractionTime = DateTime.Now;
             // Clone it so when main socket recvies new data, it wont switcheroo on us.
             _remoteEndpoint = new IPEndPoint(remoteEndpoint.Address, remoteEndpoint.Port);
+            _udpClient = new UdpClient();
+            _udpClient.Connect(new IPEndPoint(IPAddress.Loopback, port));
+            lastInteractionTime = DateTime.Now;
         }
 
         public SocketProxy(int port)
         {
             _udpClient = new UdpClient(port);
-            _udpClient.BeginReceive(new AsyncCallback(RecvData), _udpClient);
             lastInteractionTime = DateTime.Now;
+        }
+
+        /// <summary>
+        /// Begins receiving. Call after assigning dataReceived.
+        /// </summary>
+        public void Start()
+        {
+            try
+            {
+                _udpClient.BeginReceive(new AsyncCallback(RecvData), _udpClient);
+            }
+            catch (ObjectDisposedException) { }
         }
 
         public void RelayData(byte[] data, int length)
@@ -57,12 +72,29 @@ namespace LightReflectiveMirror
 
         void RecvData(IAsyncResult result)
         {
-            byte[] data = _udpClient.EndReceive(result, ref _recvEndpoint);
-            _udpClient.BeginReceive(new AsyncCallback(RecvData), _udpClient);
+            byte[] data;
+
+            try
+            {
+                data = _udpClient.EndReceive(result, ref _recvEndpoint);
+            }
+            catch (ObjectDisposedException)
+            {
+                // Proxy was torn down while a receive was pending.
+                return;
+            }
+            catch (SocketException)
+            {
+                // UDP surfaces an earlier send's ICMP Port Unreachable here.
+                // Keep the chain alive rather than letting it die silently.
+                Start();
+                return;
+            }
+
+            Start();
             _clientInitialRecv = true;
             lastInteractionTime = DateTime.Now;
             dataReceived?.Invoke(_remoteEndpoint, data);
-            
         }
     }
 }

@@ -261,6 +261,7 @@ namespace LightReflectiveMirror {
                                 try {
                                     _clientProxy = new SocketProxy (proxyPort);
                                     _clientProxy.dataReceived += ClientProcessProxyData;
+                                    _clientProxy.Start ();
                                 } catch (Exception e) {
                                     // proxyPort is captured above so this handler cannot
                                     // fault a second time on a null _NATIP.

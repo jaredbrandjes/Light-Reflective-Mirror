@@ -149,8 +149,10 @@ namespace LightReflectiveMirror
                 {
                     try
                     {
-                        _serverProxies.Add(newClientEP, new SocketProxy(natIP.Port + 1, newClientEP));
-                        _serverProxies.GetByFirst(newClientEP).dataReceived += ServerProcessProxyData;
+                        var proxy = new SocketProxy(natIP.Port + 1, newClientEP);
+                        proxy.dataReceived += ServerProcessProxyData;
+                        _serverProxies.Add(newClientEP, proxy);
+                        proxy.Start();
                     }
                     catch (Exception e)
                     {
@@ -167,6 +169,7 @@ namespace LightReflectiveMirror
                     {
                         _clientProxy = new SocketProxy(natIP.Port - 1);
                         _clientProxy.dataReceived += ClientProcessProxyData;
+                        _clientProxy.Start();
                     }
                     catch (Exception e)
                     {
@@ -183,7 +186,22 @@ namespace LightReflectiveMirror
 
         void ServerProcessProxyData(IPEndPoint remoteEndpoint, byte[] data)
         {
-            _NATPuncher.Send(data, data.Length, remoteEndpoint);
+            // Runs on a proxy's threadpool callback, where the puncher may have
+            // been torn down and an unhandled throw would be invisible.
+            var puncher = _NATPuncher;
+
+            if (puncher == null || remoteEndpoint == null)
+                return;
+
+            try
+            {
+                puncher.Send(data, data.Length, remoteEndpoint);
+            }
+            catch (ObjectDisposedException) { }
+            catch (SocketException e)
+            {
+                Debug.LogWarning($"[LRM] Proxy relay to {remoteEndpoint} failed: {e.SocketErrorCode}");
+            }
         }
 
         void ClientProcessProxyData(IPEndPoint _, byte[] data)
