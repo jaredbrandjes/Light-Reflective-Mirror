@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using kcp2k;
 using Mirror;
@@ -111,12 +112,22 @@ namespace LightReflectiveMirror {
                 }
 
                 // If NAT Puncher is initialized, send heartbeat on that as well.
-                try {
-                    if (_NATPuncher != null && _relayPuncherIP != null) {
-                        _NATPuncher.Send (new byte[] { 0 }, 1, _relayPuncherIP);
+                if (_NATPuncher != null && _relayPuncherIP != null && _natHeartbeatFailures < NAT_HEARTBEAT_FAILURE_LIMIT) {
+                    try {
+                        _NATPuncher.Send (_natHeartbeatData, 1, _relayPuncherIP);
+                        _natHeartbeatFailures = 0;
+                    } catch (Exception e) {
+                        _natHeartbeatFailures++;
+
+                        // Report the first failure, then once more on giving up.
+                        // This runs on a repeating invoke, so logging every time
+                        // buries the console in identical errors forever.
+                        if (_natHeartbeatFailures == 1) {
+                            Debug.LogError ($"[LRM] NAT heartbeat failed: {e.Message}");
+                        } else if (_natHeartbeatFailures >= NAT_HEARTBEAT_FAILURE_LIMIT) {
+                            Debug.LogError ($"[LRM] NAT heartbeat failed {NAT_HEARTBEAT_FAILURE_LIMIT} times in a row - suspending heartbeats until the NAT puncher is rebuilt. Hole punching itself is unaffected, but the hole will not be kept open. The puncher is bound to {_NATIP}; if that is a virtual adapter (VirtualBox, Hyper-V, WSL, Docker, VPN) it has no route to the relay.");
+                        }
                     }
-                } catch (Exception e) {
-                    Debug.LogError ($"[LRM] NAT heartbeat failed: {e.Message}");
                 }
 
                 // Check if any server-side proxies havent been used in 10 seconds, and timeout if so.
@@ -222,22 +233,52 @@ namespace LightReflectiveMirror {
 
                         _directConnectEndpoint = new IPEndPoint (IPAddress.Parse (ip), port);
 
-                        if (useNATPunch && attemptNatPunch) {
+                        // The relay hands back loopback when both peers sit behind the
+                        // same public IP, i.e. the same machine. There is no hole to
+                        // punch in that case, and _NATPuncher is bound to a LAN address
+                        // so sending to 127.0.0.1 from it throws WSAEADDRNOTAVAIL and
+                        // takes the join down with it. Connect straight over loopback.
+                        // Tested on the parsed address so 127.0.0.2 and friends count.
+                        bool isLoopbackPeer = IPAddress.IsLoopback (_directConnectEndpoint.Address);
+
+                        // Everything on the punched path is derived from _NATIP, which
+                        // only exists once the relay has sent RequestNATConnection.
+                        bool punchThisPeer = useNATPunch && attemptNatPunch && !isLoopbackPeer && _NATIP != null;
+
+                        if (useNATPunch && attemptNatPunch && !isLoopbackPeer && _NATIP == null)
+                            Debug.LogWarning ("[LRM] Relay asked for a punched direct connection but no NAT puncher exists yet - falling back to the relay for this peer.");
+
+                        if (punchThisPeer)
                             StartCoroutine (NATPunch (_directConnectEndpoint));
-                        }
 
                         if (!IsServer) {
-                            if (_clientProxy == null && useNATPunch && attemptNatPunch) {
-                                _clientProxy = new SocketProxy (_NATIP.Port - 1);
-                                _clientProxy.dataReceived += ClientProcessProxyData;
+                            // Only the punched path relays through the local proxy;
+                            // the loopback path talks to the host's port directly.
+                            int proxyPort = punchThisPeer ? _NATIP.Port - 1 : -1;
+                            bool proxyReady = true;
+
+                            if (_clientProxy == null && punchThisPeer) {
+                                try {
+                                    _clientProxy = new SocketProxy (proxyPort);
+                                    _clientProxy.dataReceived += ClientProcessProxyData;
+                                } catch (Exception e) {
+                                    // proxyPort is captured above so this handler cannot
+                                    // fault a second time on a null _NATIP.
+                                    Debug.LogError ($"[LRM] Could not open the client proxy on port {proxyPort}: {e.Message}");
+                                    _clientProxy = null;
+                                    proxyReady = false;
+                                }
                             }
 
-                            if (useNATPunch && attemptNatPunch) {
-                                if (ip == LOCALHOST) {
-                                    _directConnectModule.JoinServer (LOCALHOST, port + 1);
-                                } else {
-                                    _directConnectModule.JoinServer (LOCALHOST, _NATIP.Port - 1);
-                                }
+                            if (isLoopbackPeer && useNATPunch && attemptNatPunch) {
+                                _directConnectModule.JoinServer (LOCALHOST, port + 1);
+                            } else if (punchThisPeer) {
+                                // No proxy means nothing is listening on proxyPort, so
+                                // joining it would just stall until timeout.
+                                if (proxyReady)
+                                    _directConnectModule.JoinServer (LOCALHOST, proxyPort);
+                                else
+                                    Debug.LogWarning ("[LRM] Skipping the direct connection because the client proxy could not be opened; staying on the relay.");
                             } else {
                                 _directConnectModule.JoinServer (ip, port);
                             }
@@ -259,9 +300,23 @@ namespace LightReflectiveMirror {
                                 }
 
                                 // Resolve server address
+                                // Must be IPv4: _NATPuncher is an IPv4 UdpClient, and
+                                // AddressList[0] for "localhost" is ::1 on Windows,
+                                // which makes Send throw WSAEAFNOSUPPORT ("the address
+                                // used is incompatible with the requested protocol").
                                 IPAddress serverAddr;
-                                if (!IPAddress.TryParse (serverIP, out serverAddr)) {
-                                    serverAddr = Dns.GetHostEntry (serverIP).AddressList[0];
+                                if (!IPAddress.TryParse (serverIP, out serverAddr) || serverAddr.AddressFamily != AddressFamily.InterNetwork) {
+                                    serverAddr = null;
+
+                                    foreach (var candidate in Dns.GetHostEntry (serverIP).AddressList) {
+                                        if (candidate.AddressFamily == AddressFamily.InterNetwork) {
+                                            serverAddr = candidate;
+                                            break;
+                                        }
+                                    }
+
+                                    if (serverAddr == null)
+                                        throw new InvalidOperationException ($"'{serverIP}' has no IPv4 address; NAT punch requires IPv4.");
                                 }
 
                                 _relayPuncherIP = new IPEndPoint (serverAddr, NATPunchtroughPort);
@@ -419,13 +474,121 @@ namespace LightReflectiveMirror {
             Heartbeat = 200
         }
 
-        private static string GetLocalIp () {
-            var host = Dns.GetHostEntry (Dns.GetHostName ());
-            foreach (var ip in host.AddressList) {
-                if (ip.AddressFamily == AddressFamily.InterNetwork) {
-                    return ip.ToString ();
-                }
+        /// <summary>
+        /// Best-effort local IPv4 for NAT punch and direct connect.
+        /// </summary>
+        /// <remarks>
+        /// Deliberately does NOT just take the first address from
+        /// Dns.GetHostEntry. On any machine running VirtualBox, Hyper-V, WSL,
+        /// Docker or a VPN that ordering routinely puts a virtual adapter first
+        /// - e.g. 192.168.56.x, which has no gateway - and binding the NAT
+        /// puncher there makes every send fail with "network unreachable".
+        /// Cached because it used to hit DNS on every call, but only a
+        /// successful lookup is cached: caching a null would permanently
+        /// disable NAT punch for a client that started before its network was
+        /// up. InvalidateLocalIp() drops the cache when adapters may have moved.
+        /// </remarks>
+        private string GetLocalIp () {
+            if (_localIpResolved)
+                return _cachedLocalIp;
+
+            string resolved = ResolveLocalIp ();
+
+            // Only latch a real answer. A null means "could not tell yet".
+            if (resolved != null) {
+                _cachedLocalIp = resolved;
+                _localIpResolved = true;
             }
+
+            return resolved;
+        }
+
+        private void InvalidateLocalIp () {
+            _localIpResolved = false;
+            _cachedLocalIp = null;
+        }
+
+        /// <summary>
+        /// True when the host string names this machine's loopback, covering both
+        /// the "localhost" alias and any 127.x.x.x literal.
+        /// </summary>
+        private static bool IsLoopbackHost (string host) {
+            if (string.IsNullOrEmpty (host))
+                return false;
+
+            if (string.Equals (host, "localhost", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            return IPAddress.TryParse (host, out IPAddress parsed) && IPAddress.IsLoopback (parsed);
+        }
+
+        private string ResolveLocalIp () {
+            // 1. Ask the routing table which interface would actually carry
+            //    traffic to the relay. UDP Connect transmits nothing; it only
+            //    binds the socket, so this costs no packets and no DNS.
+            //    Probing the relay itself matters under split routing, where the
+            //    route to the internet and the route to the relay differ.
+            string routeTarget = string.IsNullOrEmpty (serverIP) ? "8.8.8.8" : serverIP;
+
+            for (int attempt = 0; attempt < 2; attempt++) {
+                try {
+                    using (var probe = new Socket (AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp)) {
+                        probe.Connect (routeTarget, 65530);
+
+                        if (probe.LocalEndPoint is IPEndPoint routed) {
+                            // Loopback is normally the wrong answer, but it is the
+                            // right one when the relay itself is on loopback: binding
+                            // the puncher to a LAN address then makes every send to
+                            // the relay fail with WSAEADDRNOTAVAIL.
+                            if (!IPAddress.IsLoopback (routed.Address) || IsLoopbackHost (routeTarget))
+                                return routed.Address.ToString ();
+                        }
+                    }
+                } catch {
+                    // Unresolvable host, no route, or sockets restricted.
+                }
+
+                // Relay address did not give an answer - fall back to a general
+                // internet route before resorting to interface enumeration.
+                if (routeTarget == "8.8.8.8")
+                    break;
+
+                routeTarget = "8.8.8.8";
+            }
+
+            // 2. First up, non-loopback interface that has a gateway. Virtual
+            //    adapters generally have none, which is what excludes them.
+            try {
+                foreach (var ni in NetworkInterface.GetAllNetworkInterfaces ()) {
+                    if (ni.OperationalStatus != OperationalStatus.Up)
+                        continue;
+
+                    if (ni.NetworkInterfaceType == NetworkInterfaceType.Loopback)
+                        continue;
+
+                    var props = ni.GetIPProperties ();
+
+                    if (props.GatewayAddresses.Count == 0)
+                        continue;
+
+                    foreach (var unicast in props.UnicastAddresses) {
+                        if (unicast.Address.AddressFamily == AddressFamily.InterNetwork)
+                            return unicast.Address.ToString ();
+                    }
+                }
+            } catch {
+                // Fall through to the original behaviour.
+            }
+
+            // 3. Original behaviour, as a last resort.
+            try {
+                var host = Dns.GetHostEntry (Dns.GetHostName ());
+
+                foreach (var ip in host.AddressList) {
+                    if (ip.AddressFamily == AddressFamily.InterNetwork)
+                        return ip.ToString ();
+                }
+            } catch { }
 
             return null;
         }
@@ -437,6 +600,13 @@ namespace LightReflectiveMirror {
         /// </summary>
         private void TeardownNATPuncher () {
             _natReceiveStarted = false;
+
+            // Both of these latch off after repeated failure; clearing them here
+            // is what lets a fresh puncher on a working adapter start clean.
+            _natHeartbeatFailures = 0;
+
+            // Adapters may well have changed if we are tearing down.
+            InvalidateLocalIp ();
 
             if (_NATPuncher != null) {
                 try {
@@ -493,9 +663,17 @@ namespace LightReflectiveMirror {
 
                 if (!bound) {
                     _NATIP = null;
+
+                    // The cached address may name an adapter that no longer
+                    // exists, so drop it and re-resolve on the next attempt.
+                    InvalidateLocalIp ();
+
                     throw new InvalidOperationException (
-                        $"could not bind a NAT puncher port in {NAT_PORT_BIND_ATTEMPTS} attempts - last error: {lastBindError?.Message}");
+                        $"could not bind a NAT puncher port on {localIp} in {NAT_PORT_BIND_ATTEMPTS} attempts - last error: {lastBindError?.Message}");
                 }
+
+                // Fresh socket, so give the heartbeat a clean slate.
+                _natHeartbeatFailures = 0;
             } catch (Exception ex) {
                 Debug.LogError ($"[LRM] Failed to create NAT puncher: {ex.Message}");
                 _NATPuncher?.Dispose ();

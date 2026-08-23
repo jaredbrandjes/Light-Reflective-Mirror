@@ -153,10 +153,18 @@ namespace LightReflectiveMirror {
             if (_directConnectModule != null && _connectedDirectClients.TryGetBySecond (connectionId, out int directId)) {
                 _directConnectModule.ServerSend (directId, segment, channelId);
             } else {
+                // Mirror can call ServerSend for a connection we have already
+                // dropped; an unguarded GetBySecond throws KeyNotFoundException
+                // out of the send loop and takes the whole server down.
+                if (!_connectedRelayClients.TryGetBySecond (connectionId, out int relayId)) {
+                    Debug.LogWarning ($"[LRM] Dropped a send to unknown connection {connectionId}.");
+                    return;
+                }
+
                 int pos = 0;
                 _clientSendBuffer.WriteByte (ref pos, (byte) OpCodes.SendData);
                 _clientSendBuffer.WriteBytes (ref pos, segment.Array.Take (segment.Count).ToArray ());
-                _clientSendBuffer.WriteInt (ref pos, _connectedRelayClients.GetBySecond (connectionId));
+                _clientSendBuffer.WriteInt (ref pos, relayId);
 
                 clientToServerTransport.ClientSend (new ArraySegment<byte> (_clientSendBuffer, 0, pos), channelId);
             }

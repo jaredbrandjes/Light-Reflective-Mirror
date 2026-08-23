@@ -23,6 +23,22 @@ namespace LightReflectiveMirror {
         public int NATPunchtroughPort = -1;
         private const int NAT_PUNCH_ATTEMPTS = 3;
         private const int NAT_PORT_BIND_ATTEMPTS = 100;
+        private const int NAT_HEARTBEAT_FAILURE_LIMIT = 5;
+
+        // Punch burst driven by the NATPunch coroutine, distinct from the
+        // NAT_PUNCH_ATTEMPTS burst sent inline on RequestNATConnection.
+        private const int NAT_PUNCH_COROUTINE_ATTEMPTS = 10;
+        private const float NAT_PUNCH_COROUTINE_INTERVAL = 0.25f;
+
+        private static readonly byte[] _natHeartbeatData = new byte[1] { 0 };
+        private int _natHeartbeatFailures = 0;
+
+        // Resolved lazily by GetLocalIp(). Per-instance rather than static so the
+        // cache follows the transport's own serverIP and can be invalidated on
+        // teardown; a stale address here makes the NAT puncher bind somewhere
+        // with no route.
+        private string _cachedLocalIp;
+        private bool _localIpResolved;
 
         // LLB variables (LRM Load Balancer)
         public bool useLoadBalancer = false;

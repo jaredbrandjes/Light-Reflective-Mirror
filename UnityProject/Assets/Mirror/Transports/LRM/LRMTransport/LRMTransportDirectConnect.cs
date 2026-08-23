@@ -1,5 +1,6 @@
 ﻿using Mirror;
 using System;
+using UnityEngine;
 
 namespace LightReflectiveMirror
 {
@@ -20,14 +21,28 @@ namespace LightReflectiveMirror
             if (!_isServer)
                 return;
 
-            OnServerDisconnected?.Invoke(_connectedDirectClients.GetByFirst(clientID));
+            // DirectAddClient silently skips registration when we were not yet the
+            // server, so a direct client can reach here unknown. GetByFirst would
+            // throw KeyNotFoundException on that id.
+            if (!_connectedDirectClients.TryGetByFirst(clientID, out int connectionId))
+                return;
+
+            OnServerDisconnected?.Invoke(connectionId);
             _connectedDirectClients.Remove(clientID);
         }
 
         public void DirectReceiveData(ArraySegment<byte> data, int channel, int clientID = -1)
         {
             if (_isServer)
-                OnServerDataReceived?.Invoke(_connectedDirectClients.GetByFirst(clientID), data, channel);
+            {
+                // Same unregistered-client case as DirectRemoveClient: data can
+                // arrive from a direct peer we never added, and an unguarded
+                // lookup takes the whole server down with a KeyNotFoundException.
+                if (_connectedDirectClients.TryGetByFirst(clientID, out int connectionId))
+                    OnServerDataReceived?.Invoke(connectionId, data, channel);
+                else
+                    Debug.LogWarning($"[LRM] Dropped direct data from unregistered client {clientID}.");
+            }
 
             if (_isClient)
                 OnClientDataReceived?.Invoke(data, channel);
