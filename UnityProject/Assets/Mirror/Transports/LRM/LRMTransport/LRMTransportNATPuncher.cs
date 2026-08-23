@@ -165,12 +165,20 @@ namespace LightReflectiveMirror
                     proxy = null;
                 }
 
-                // Started outside the lock so a blocking socket call cannot stall
-                // the main thread's sweep.
-                if (created)
-                    proxy.Start();
-                else if (proxy != null && data.Length > 2)
-                    proxy.RelayData(data, data.Length);
+                // Outside the lock so a blocking socket call cannot stall the main
+                // thread's sweep, but still guarded: this is a threadpool callback,
+                // and the sweep can dispose this proxy between the release and here.
+                try
+                {
+                    if (created)
+                        proxy.Start();
+                    else if (proxy != null && data.Length > 2)
+                        proxy.RelayData(data, data.Length);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"[LRM] Server proxy for {newClientEP} failed after creation: {e.Message}");
+                }
             }
 
             if (_isClient)
@@ -185,6 +193,9 @@ namespace LightReflectiveMirror
                     }
                     catch (Exception e)
                     {
+                        // Dispose before dropping it: the constructor has already
+                        // bound the socket, so nulling alone leaks the port.
+                        _clientProxy?.Dispose();
                         _clientProxy = null;
                         Debug.LogError($"[LRM] Could not open the client proxy on port {natIP.Port - 1}: {e}");
                     }
@@ -218,7 +229,23 @@ namespace LightReflectiveMirror
 
         void ClientProcessProxyData(IPEndPoint _, byte[] data)
         {
-            _NATPuncher.Send(data, data.Length, _directConnectEndpoint);
+            // Same threadpool-callback hazards as ServerProcessProxyData: the main
+            // thread can null both of these via TeardownNATPuncher.
+            var puncher = _NATPuncher;
+            var target = _directConnectEndpoint;
+
+            if (puncher == null || target == null)
+                return;
+
+            try
+            {
+                puncher.Send(data, data.Length, target);
+            }
+            catch (ObjectDisposedException) { }
+            catch (SocketException e)
+            {
+                Debug.LogWarning($"[LRM] Proxy relay to {target} failed: {e.SocketErrorCode}");
+            }
         }
     }
 }

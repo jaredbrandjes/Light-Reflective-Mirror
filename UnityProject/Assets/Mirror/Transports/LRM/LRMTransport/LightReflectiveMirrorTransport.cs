@@ -132,6 +132,8 @@ namespace LightReflectiveMirror {
 
                 // Check if any server-side proxies havent been used in 10 seconds, and timeout if so.
                 // Locked: NAT receive callbacks add proxies from threadpool threads.
+                List<SocketProxy> expired = null;
+
                 lock (_serverProxyLock) {
                     var keys = new List<IPEndPoint> (_serverProxies.GetAllKeys ());
 
@@ -140,10 +142,16 @@ namespace LightReflectiveMirror {
                             continue;
 
                         if (DateTime.Now.Subtract (timedOut.lastInteractionTime).TotalSeconds > 10) {
-                            timedOut.Dispose ();
+                            (expired ?? (expired = new List<SocketProxy> ())).Add (timedOut);
                             _serverProxies.Remove (keys[i]);
                         }
                     }
+                }
+
+                // Disposed outside the lock - see ClearServerProxies.
+                if (expired != null) {
+                    for (int i = 0; i < expired.Count; i++)
+                        expired[i].Dispose ();
                 }
             }
         }
@@ -270,7 +278,10 @@ namespace LightReflectiveMirror {
                                     _clientProxy.Start ();
                                 } catch (Exception e) {
                                     // proxyPort is captured above so this handler cannot
-                                    // fault a second time on a null _NATIP.
+                                    // fault a second time on a null _NATIP. Dispose
+                                    // before dropping it - the constructor has already
+                                    // bound the socket, so nulling alone leaks the port.
+                                    _clientProxy?.Dispose ();
                                     Debug.LogError ($"[LRM] Could not open the client proxy on port {proxyPort}: {e.Message}");
                                     _clientProxy = null;
                                     proxyReady = false;
@@ -641,16 +652,26 @@ namespace LightReflectiveMirror {
         /// receive callbacks add to _serverProxies from threadpool threads.
         /// </summary>
         private void ClearServerProxies () {
+            var doomed = new List<SocketProxy> ();
+
             lock (_serverProxyLock) {
                 var proxyKeys = new List<IPEndPoint> (_serverProxies.GetAllKeys ());
 
                 for (int i = 0; i < proxyKeys.Count; i++) {
-                    if (_serverProxies.TryGetByFirst (proxyKeys[i], out SocketProxy proxy))
-                        proxy.Dispose ();
+                    // Remove indexes firstToSecond and throws on a missing key, so it
+                    // must be guarded by the same lookup as the dispose.
+                    if (!_serverProxies.TryGetByFirst (proxyKeys[i], out SocketProxy proxy))
+                        continue;
 
+                    doomed.Add (proxy);
                     _serverProxies.Remove (proxyKeys[i]);
                 }
             }
+
+            // Disposed outside the lock: closing a socket with a pending async
+            // receive blocks, and every NAT receive callback waits on this lock.
+            for (int i = 0; i < doomed.Count; i++)
+                doomed[i].Dispose ();
         }
 
         private void SetupNATPuncher () {
