@@ -443,6 +443,29 @@ namespace LightReflectiveMirror {
             }
         }
 
+        /// <summary>
+        /// The maxPlayers value to advertise to the relay.
+        ///
+        /// The relay counts the room creator in Room.currentPlayers (clients.Count
+        /// + 1), which is right for a host but wrong for a dedicated server, which
+        /// is not a player. A dedicated server therefore advertises one extra slot
+        /// to cancel that out, so maxPlayers always means "players who can play" in
+        /// both modes, without changing the wire format.
+        ///
+        /// Saturates rather than wrapping. int.MaxValue already means unlimited,
+        /// and +1 there wraps to int.MinValue, which no currentPlayers can be below
+        /// and so would refuse every join.
+        /// </summary>
+        private static int AdvertisedMaxPlayers (int maxPlayers) {
+            bool creatorIsPlayer = NetworkManager.singleton == null
+                || NetworkManager.singleton.mode != NetworkManagerMode.ServerOnly;
+
+            if (creatorIsPlayer || maxPlayers == int.MaxValue)
+                return maxPlayers;
+
+            return maxPlayers + 1;
+        }
+
         public void UpdateRoomPlayerCount (int maxPlayers = 16) {
             if (IsServer) {
                 int pos = 0;
@@ -453,12 +476,7 @@ namespace LightReflectiveMirror {
                 _clientSendBuffer.WriteBool (ref pos, false);
                 _clientSendBuffer.WriteBool (ref pos, true);
 
-                // Same room-creator adjustment as ServerStart, so a later update
-                // does not silently change what maxPlayers means.
-                bool creatorIsPlayer = NetworkManager.singleton == null
-                    || NetworkManager.singleton.mode != NetworkManagerMode.ServerOnly;
-
-                _clientSendBuffer.WriteInt (ref pos, creatorIsPlayer ? maxPlayers : maxPlayers + 1);
+                _clientSendBuffer.WriteInt (ref pos, AdvertisedMaxPlayers (maxPlayers));
 
                 clientToServerTransport.ClientSend (new ArraySegment<byte> (_clientSendBuffer, 0, pos), 0);
             }

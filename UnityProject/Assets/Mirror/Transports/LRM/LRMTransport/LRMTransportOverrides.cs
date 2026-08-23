@@ -203,16 +203,9 @@ namespace LightReflectiveMirror {
             int pos = 0;
             _clientSendBuffer.WriteByte (ref pos, (byte) OpCodes.CreateRoom);
 
-            // The relay counts the room creator as an occupant - Room.currentPlayers
-            // is clients.Count + 1 - which is right for a host but wrong for a
-            // dedicated server, which is not a player. Advertise one extra slot in
-            // that case so maxServerPlayers always means "players who can play",
-            // in both modes and without changing the CreateRoom wire format.
-            // Mirror sets mode before Listen(), so it is already correct here.
-            bool creatorIsPlayer = NetworkManager.singleton == null
-                || NetworkManager.singleton.mode != NetworkManagerMode.ServerOnly;
-
-            _clientSendBuffer.WriteInt (ref pos, creatorIsPlayer ? maxServerPlayers : maxServerPlayers + 1);
+            // Mirror sets mode before Listen(), so AdvertisedMaxPlayers reads the
+            // correct mode here.
+            _clientSendBuffer.WriteInt (ref pos, AdvertisedMaxPlayers (maxServerPlayers));
             _clientSendBuffer.WriteString (ref pos, serverName);
             _clientSendBuffer.WriteBool (ref pos, isPublicServer);
             _clientSendBuffer.WriteString (ref pos, extraServerData);
