@@ -21,6 +21,15 @@ upgrade from V14** — see [Migration from V14](#migration-from-v14) before depl
   payload, causing the relay to read past the end of the message.
 - **Fixed:** repeated connect/disconnect cycles leaked socket proxies and left
   stale room state.
+- **Fixed:** the relay answered every join with `ServerLeft`, because `JoinRoom`
+  calls `LeaveRoom` first and that notified the joining client. Any re-join, and
+  the direct-connect-to-relay fallback, could never succeed.
+- **Fixed:** `_serverProxies` was mutated from NAT receive callbacks on several
+  threadpool threads with no synchronisation.
+- **Fixed:** the NAT puncher bound the first address `Dns.GetHostEntry` returned,
+  which on any machine with VirtualBox, Hyper-V, WSL, Docker or a VPN is often a
+  virtual adapter with no route.
+- NAT punch and direct connect are experimental — see the section below.
 - Property-based `IsServer` / `IsClient` API on the transport.
 - Bounds checking and data validation on inbound relay messages.
 - CI restored — both workflows had been failing on retired action versions.
@@ -35,9 +44,36 @@ Light Reflective Mirror is a transport for Mirror Networking which relays networ
 * Built in server list!
 * Relay password to stop other games from stealing your precious relay!
 * Relay supports connecting users without them needing to port forward!
-* NAT Punchtrough (Full Cone, Restricted Cone, and Port Restricted Cone)
-* Direct Connecting
+* NAT Punchtrough (Full Cone, Restricted Cone, and Port Restricted Cone) — **experimental, see below**
+* Direct Connecting — **experimental, see below**
 * Load Balancing with multi-relay setup
+
+## NAT punch and direct connect status
+
+**Experimental. `useNATPunch` is off by default and should stay off unless you
+are testing it.** Relaying is the supported path.
+
+As of V15 the direct KCP handshake does not complete over LRM's proxy pair. It
+was tested on one machine, across one LAN, and between two different public IPs
+with the host on a mobile hotspot. The direct connection failed in all three.
+
+Enabling `useNATPunch` is safe but currently pointless:
+
+| | |
+|---|---|
+| Join succeeds | Yes — via relay fallback |
+| Both players replicate | Yes |
+| Disconnect / reconnect | Yes |
+| Traffic goes peer-to-peer | **No** — it relays |
+| Cost of enabling it | ~10s delay on join while the direct attempt times out |
+
+The host also logs `[KCP] Server: RawSend invalid connectionId=...` warnings
+while a client joins. These are the host's direct-connect KCP server reacting
+to the abandoned attempt. They are noise, not a fault.
+
+Prior to V15 a failed direct connection prevented the client from joining at
+all, because the relay answered the fallback with `ServerLeft`. That is fixed;
+failure now degrades to relaying.
 
 ## How does it work?
 
