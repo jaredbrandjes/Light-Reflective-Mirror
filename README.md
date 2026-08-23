@@ -1,4 +1,4 @@
-![Logo](LRM.png)
+﻿![Logo](LRM.png)
 
 # Light Reflective Mirror
 
@@ -7,10 +7,11 @@
 [![Build Node](https://github.com/Speidy674/Light-Reflective-Mirror/actions/workflows/build-node.yml/badge.svg)](https://github.com/Speidy674/Light-Reflective-Mirror/actions/workflows/build-node.yml)
 [![Build Load Balancer](https://github.com/Speidy674/Light-Reflective-Mirror/actions/workflows/build-loadbalancer.yml/badge.svg)](https://github.com/Speidy674/Light-Reflective-Mirror/actions/workflows/build-loadbalancer.yml)
 
-## What's new in V15
+## What's new in V16
 
-V15 brings LRM up to date with current Mirror and .NET. **It is not a drop-in
-upgrade from V14** — see [Migration from V14](#migration-from-v14) before deploying.
+V16 brings LRM up to date with current Mirror and .NET, on top of the V15 work
+in jaredbrandjes' fork. **It is not a drop-in upgrade from V14** — see
+[Migration from V14](#migration-from-v14) before deploying.
 
 - **Mirror 93.0.0** (was 81.4.0). Fixes network components not syncing against
   current Mirror releases.
@@ -53,7 +54,7 @@ Light Reflective Mirror is a transport for Mirror Networking which relays networ
 **Experimental. `useNATPunch` is off by default and should stay off unless you
 are testing it.** Relaying is the supported path.
 
-As of V15 the direct KCP handshake does not complete over LRM's proxy pair. It
+As of V16 the direct KCP handshake does not complete over LRM's proxy pair. It
 was tested on one machine, across one LAN, and between two different public IPs
 with the host on a mobile hotspot. The direct connection failed in all three.
 
@@ -71,7 +72,7 @@ The host also logs `[KCP] Server: RawSend invalid connectionId=...` warnings
 while a client joins. These are the host's direct-connect KCP server reacting
 to the abandoned attempt. They are noise, not a fault.
 
-Prior to V15 a failed direct connection prevented the client from joining at
+Prior to V16 a failed direct connection prevented the client from joining at
 all, because the relay answered the fallback with `ServerLeft`. That is fixed;
 failure now degrades to relaying.
 
@@ -84,9 +85,9 @@ I took a bit of a unique approach to this version and instead of using one fixed
 **This is not a drop-in replacement. Upgrading is a flag day: the relay and every
 shipped client must be updated together.**
 
-- ❌ **The KCP handshake is not backwards compatible.** V15 bundles kcp2k V1.41, which
+- ❌ **The KCP handshake is not backwards compatible.** V16 bundles kcp2k V1.41, which
   added per-connection anti-spoofing cookies. V14 ships the pre-cookie kcp2k. An old
-  client cannot complete the handshake with a V15 relay, and a V15 client cannot
+  client cannot complete the handshake with a V16 relay, and a V16 client cannot
   handshake with a V14 relay — the connection fails before LRM authentication is
   ever reached. If you have players on old builds, they will be unable to connect
   the moment you upgrade the relay.
@@ -105,9 +106,22 @@ shipped client must be updated together.**
 
 ### Recommended upgrade path
 
-1. Stand up the V15 relay as a **second instance on a separate port**, leaving V14 running.
+1. Stand up the V16 relay as a **second instance on a separate port**, leaving V14 running.
 2. Build and test a Mirror 93 client against it.
 3. Ship a **forced client update**, then retire the V14 instance once old builds have drained.
+
+## Migration from V15
+
+V15 is [jaredbrandjes/Light-Reflective-Mirror](https://github.com/jaredbrandjes/Light-Reflective-Mirror).
+Upgrading from it is straightforward — same Mirror, same kcp2k, same wire protocol.
+
+- ✅ **No handshake change.** `MultiCompiled.dll` is byte-identical, so V15 clients
+  connect to a V16 relay and vice versa.
+- ✅ **No config change.** `config.json` fields and environment variables are unchanged.
+- ⚠️ **`RecreateRoom` (opcodes 22/23) removed from the relay.** No client ever sent
+  them. It reassigned `Room.hostId` to any authenticated sender with no ownership
+  check, so any client could seize any live room.
+- The rest is bug fixes; see [What's new in V16](#whats-new-in-v16).
 
 ## Tutorials
 
@@ -172,7 +186,7 @@ UpdateHeartbeatInterval - the amounts of update calls before sending a heartbeat
 
 ## Compatibility Matrix
 
-| Component | Original LRM | Speidy674 V14 | This Release (v15) |
+| Component | Original LRM | Speidy674 V14 | This Release (v16) |
 |-----------|--------------|---------------|-------------------|
 | .NET (relay node) | 5.0 | 7.0 | 8.0 |
 | .NET (load balancer) | 5.0 | 5.0 | 8.0 |
@@ -190,7 +204,7 @@ Starting with steam, steam offers a free relay with NAT punchthrough for anyone 
 Epic is a newer transport that offers NAT Punchthrough, and a relay service for free. As of writing this its only available for usage on Windows/Mac/Linux (More platforms are planned and releasing in the future). This one is great because they offer it for free! Thats right, a free relay and NAT punchthrough server, plus more! They have more tools such as Matchmaking, server browser, statistics, and more! This is NOT locked into only releasing on Epic Store, like how steams is. So you can release on any store you want if your game uses this. Now onto the downsides, they have a very PITA SDK to use with a fairly small community for the C# side of things. (FakeByte helps alot in the discord and will help with features outside of the relay transport!). The documentation is sub-par and severely lacking in some places, which is expected as its fairly new. They also have Epic Account Services, which is similar to steams but like the relay, not locked into one store! With those services you get user accounts, In game purchases, achievements, and much more. So if you want a free relay/NAT Punchthrough server, and want to go along for the ride of EoS, this is the one. You cant beat free. :P Check it out [here](https://github.com/FakeByte/EpicOnlineTransport)
 
 ### LRM
-LRM is a self-hosted, open source, relay/NAT Punchthrough server. It's available for all platforms (PC, Mac, Linux, WebGL, Android, IOS, You name it!). It does this by supporting any of mirrors existing transports. If you want webgl? Use websockets! Want TCP? Telepathy! UDP? KCP! This is one of LRM's main features. The game developer can decide on how they want their data sent between the server and clients. With LRM, you are going to have to host the servers yourself. A load balancer ships alongside the relay (see `LoadBalancerProject`), which makes it easy to expand servers in regions and balance users out between them. The more powerful of a server you have, the more that LRM node can host. With some tests (All clients relayed, none NAT punched), we could get about ~200 CCU on a $5 google cloud server (f1-micro). **V15 keeps LRM working with current Mirror and .NET releases.** So, if you are more of a self-hosting person, who wants full control of your servers, or want a relay for a platform the others don't support (WebGL). Use LRM, if you have any questions, we are in the discord channel everyday! :)
+LRM is a self-hosted, open source, relay/NAT Punchthrough server. It's available for all platforms (PC, Mac, Linux, WebGL, Android, IOS, You name it!). It does this by supporting any of mirrors existing transports. If you want webgl? Use websockets! Want TCP? Telepathy! UDP? KCP! This is one of LRM's main features. The game developer can decide on how they want their data sent between the server and clients. With LRM, you are going to have to host the servers yourself. A load balancer ships alongside the relay (see `LoadBalancerProject`), which makes it easy to expand servers in regions and balance users out between them. The more powerful of a server you have, the more that LRM node can host. With some tests (All clients relayed, none NAT punched), we could get about ~200 CCU on a $5 google cloud server (f1-micro). **V16 keeps LRM working with current Mirror and .NET releases.** So, if you are more of a self-hosting person, who wants full control of your servers, or want a relay for a platform the others don't support (WebGL). Use LRM, if you have any questions, we are in the discord channel everyday! :)
 
 ## Credits
 
@@ -198,7 +212,7 @@ LRM is a self-hosted, open source, relay/NAT Punchthrough server. It's available
 * **Derek-R-S** - Original creator and maintainer through v12
 * **Speidy674** - Community maintenance fork, V14 with .NET 7 upgrade  
 * **Biebras** - V14 bug fixes and improvements
-* **jaredbrandjes** - V15 Mirror compatibility and .NET 8 modernization
+* **jaredbrandjes** - V15/V16 Mirror compatibility and .NET 8 modernization
 
 **Original Contributors:**
 * **Cooper** - Assisted with development and made some wonderful features! He's also active in the discord to help answer questions and help with issues.
@@ -209,7 +223,8 @@ LRM is a self-hosted, open source, relay/NAT Punchthrough server. It's available
 
 - **Original**: [Derek-R-S/Light-Reflective-Mirror](https://github.com/Derek-R-S/Light-Reflective-Mirror) (v1-v12)
 - **V14 Base**: [Speidy674/Light-Reflective-Mirror](https://github.com/Speidy674/Light-Reflective-Mirror) (community maintenance)
-- **V15**: this repository — co-maintained by Speidy674 and jaredbrandjes
+- **V15**: [jaredbrandjes/Light-Reflective-Mirror](https://github.com/jaredbrandjes/Light-Reflective-Mirror) (Mirror 93, .NET 8)
+- **V16**: this repository — co-maintained by Speidy674 and jaredbrandjes
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
