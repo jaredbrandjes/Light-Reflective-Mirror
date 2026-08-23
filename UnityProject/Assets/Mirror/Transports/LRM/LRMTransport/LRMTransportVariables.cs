@@ -114,6 +114,10 @@ namespace LightReflectiveMirror {
         private readonly object _serverProxyLock = new object ();
         private BiDictionary<int, int> _connectedRelayClients = new BiDictionary<int, int> ();
         private BiDictionary<int, int> _connectedDirectClients = new BiDictionary<int, int> ();
+
+        // Real remote address per direct-connect connection, when the transport
+        // reports one. Only used to make ServerGetClientAddress meaningful.
+        private Dictionary<int, string> _directClientAddresses = new Dictionary<int, string> ();
         private bool _serverListUpdated = false;
     }
 

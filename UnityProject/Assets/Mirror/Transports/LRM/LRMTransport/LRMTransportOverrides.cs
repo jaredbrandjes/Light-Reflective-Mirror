@@ -23,8 +23,12 @@ namespace LightReflectiveMirror {
             if (_connectedRelayClients.TryGetBySecond (connectionId, out int relayId))
                 return relayId.ToString ();
 
-            if (_connectedDirectClients.TryGetBySecond (connectionId, out int directId))
+            if (_connectedDirectClients.TryGetBySecond (connectionId, out int directId)) {
+                if (_directClientAddresses.TryGetValue (connectionId, out string address))
+                    return address;
+
                 return "DIRECT-" + directId;
+            }
 
             // Shouldn't ever get here.
             return "?";
