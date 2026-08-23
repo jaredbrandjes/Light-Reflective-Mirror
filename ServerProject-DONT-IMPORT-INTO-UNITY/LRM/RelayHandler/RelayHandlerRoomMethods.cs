@@ -217,17 +217,23 @@ namespace LightReflectiveMirror {
                         Program.transport.ServerSend (rooms[i].hostId, new ArraySegment<byte> (sendBuffer, 0, pos), 0);
                         _sendBuffers.Return (sendBuffer);
 
-                        // temporary solution to kicking bug
-                        // this tells the local player that got kicked that he, well, got kicked.
-                        pos = 0;
-                        sendBuffer = _sendBuffers.Rent (1);
+                        // Tell the client they were removed - but ONLY when this was
+                        // an actual kick. requiredHostId == -1 means they left on
+                        // their own, which also covers the implicit LeaveRoom that
+                        // JoinRoom performs at its start. Sending ServerLeft there
+                        // told a client that was in the middle of joining that the
+                        // server had gone, so it tore itself down - which made the
+                        // direct-connect-to-relay fallback structurally unable to
+                        // succeed, and any re-join of a room self-destruct.
+                        if (requiredHostId != -1) {
+                            pos = 0;
+                            sendBuffer = _sendBuffers.Rent (1);
 
-                        sendBuffer.WriteByte (ref pos, (byte) OpCodes.ServerLeft);
+                            sendBuffer.WriteByte (ref pos, (byte) OpCodes.ServerLeft);
 
-                        Program.transport.ServerSend (clientId, new ArraySegment<byte> (sendBuffer, 0, pos), 0);
-                        _sendBuffers.Return (sendBuffer);
-
-                        //end temporary solution
+                            Program.transport.ServerSend (clientId, new ArraySegment<byte> (sendBuffer, 0, pos), 0);
+                            _sendBuffers.Return (sendBuffer);
+                        }
 
                         Endpoint.RoomsModified ();
                         _cachedClientRooms.Remove (clientId);
