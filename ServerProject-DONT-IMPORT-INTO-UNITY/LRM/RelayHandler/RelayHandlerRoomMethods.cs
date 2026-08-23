@@ -102,12 +102,31 @@ namespace LightReflectiveMirror {
                     if (canDirectConnect && Program.instance.NATConnections.ContainsKey (clientId) && room.supportsDirectConnect) {
                         sendJoinBuffer.WriteByte (ref sendJoinPos, (byte) OpCodes.DirectConnectIP);
 
-                        if (Program.instance.NATConnections[clientId].Address.Equals (room.hostIP.Address))
-                            sendJoinBuffer.WriteString (ref sendJoinPos, room.hostLocalIP == localIP ? "127.0.0.1" : room.hostLocalIP);
+                        bool samePublicIP = Program.instance.NATConnections[clientId].Address.Equals (room.hostIP.Address);
+                        bool sameMachine = samePublicIP && room.hostLocalIP == localIP;
+
+                        if (samePublicIP)
+                            sendJoinBuffer.WriteString (ref sendJoinPos, sameMachine ? "127.0.0.1" : room.hostLocalIP);
                         else
                             sendJoinBuffer.WriteString (ref sendJoinPos, room.hostIP.Address.ToString ());
 
-                        sendJoinBuffer.WriteInt (ref sendJoinPos, room.useNATPunch ? room.hostIP.Port : room.port);
+                        int directPort = room.useNATPunch ? room.hostIP.Port : room.port;
+
+                        // Whenever both peers share a public IP we hand out the host's
+                        // LOCAL address - 127.0.0.1 on one machine, hostLocalIP on one
+                        // LAN - so the port has to be local too. room.hostIP.Port is the
+                        // router's external NAT mapping, and there is no NAT in the path
+                        // to translate it back, so pairing it with a local address
+                        // reaches nothing and the client times out after 10s. Confirmed
+                        // on a two-machine LAN: the relay offered 192.168.1.141:57626
+                        // while the host's puncher was bound in 16000-16999.
+                        // The host reports its local puncher port in room.port while NAT
+                        // punching; hosts older than V15 send 0, so keep the punched
+                        // port for those rather than handing out port 1.
+                        if (samePublicIP && room.useNATPunch && room.port > 0)
+                            directPort = room.port;
+
+                        sendJoinBuffer.WriteInt (ref sendJoinPos, directPort);
                         sendJoinBuffer.WriteBool (ref sendJoinPos, room.useNATPunch);
 
                         Program.transport.ServerSend (clientId, new ArraySegment<byte> (sendJoinBuffer, 0, sendJoinPos), 0);

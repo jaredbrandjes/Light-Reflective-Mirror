@@ -227,7 +227,14 @@ namespace LightReflectiveMirror {
 
             if (natPunchActive) {
                 _clientSendBuffer.WriteBool (ref pos, true);
-                _clientSendBuffer.WriteInt (ref pos, 0);
+
+                // Report the local puncher port rather than the 0 this used to
+                // send. In NAT punch mode the relay previously ignored this field
+                // entirely, so older nodes are unaffected; newer ones use it for
+                // peers on this same machine, where the punched external port is
+                // meaningless. The client derives our direct server from port + 1,
+                // which is exactly where StartServer bound it above.
+                _clientSendBuffer.WriteInt (ref pos, _NATIP.Port);
             } else {
                 _clientSendBuffer.WriteBool (ref pos, false);
                 _clientSendBuffer.WriteInt (ref pos, _directConnectModule == null ? 1 : _directConnectModule.SupportsNATPunch () ? _directConnectModule.GetTransportPort () : 1);
