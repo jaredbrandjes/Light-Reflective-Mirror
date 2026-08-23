@@ -10,14 +10,14 @@
 ## What's new in V16
 
 V16 brings LRM up to date with current Mirror and .NET, on top of the V15 work
-in jaredbrandjes' fork. **It is not a drop-in upgrade from V14** — see
+in jaredbrandjes' fork. **It is not a drop-in upgrade from V14.** See
 [Migration from V14](#migration-from-v14) before deploying.
 
 - **Mirror 93.0.0** (was 81.4.0). Fixes network components not syncing against
   current Mirror releases.
 - **.NET 8** across the relay node, the load balancer and both Dockerfiles (was .NET 5).
 - **Fixed:** clients calling `StopClient()` were never returned to the offline
-  scene — the transport never reported the disconnect back to Mirror.
+  scene, because the transport never reported the disconnect back to Mirror.
 - **Fixed:** the direct-connect → relay fallback sent a truncated `JoinServer`
   payload, causing the relay to read past the end of the message.
 - **Fixed:** repeated connect/disconnect cycles leaked socket proxies and left
@@ -34,9 +34,18 @@ in jaredbrandjes' fork. **It is not a drop-in upgrade from V14** — see
   `OnServerConnectedWithAddress` was unassigned on the direct transport, so the
   host threw and disconnected the instant a client authenticated. See
   [NAT punch and direct connect](#nat-punch-and-direct-connect).
+- **Changed:** `Max Players` now means total players **including the host**. The
+  relay counted the host in `currentPlayers` but gated joins on the client list
+  alone, so every room admitted one player more than its limit. See
+  [Migration from V15](#migration-from-v15).
+- **Fixed:** a client whose direct connection dropped never sent `LeaveRoom`, so the
+  relay held its room slot until the relay session itself ended. Two of those
+  permanently filled a 2-player room.
+- **Fixed:** a dedicated server was counted as a player, so a headless room held one
+  fewer client than `Max Players`.
 - Property-based `IsServer` / `IsClient` API on the transport.
 - Bounds checking and data validation on inbound relay messages.
-- CI restored — both workflows had been failing on retired action versions.
+- CI restored. Both workflows had been failing on retired action versions.
 - Fixed SimpleWebTransport FQDN resolution (thanks to Kevin Cerro).
 
 ## What
@@ -70,7 +79,7 @@ and on two different public IPs with the host on a mobile hotspot.
 Mirror 93 deprecated `Transport.OnServerConnected` in favour of
 `OnServerConnectedWithAddress` and does not forward between them. kcp2k raises
 only the new one, with an unguarded `.Invoke`, and `LRMDirectConnectModule`
-never assigned it — so it was always null on the host's direct-connect
+never assigned it, so it was always null on the host's direct-connect
 transport.
 
 The host authenticated the joining client, queued its reply, threw a
@@ -101,20 +110,20 @@ shipped client must be updated together.**
 - ❌ **The KCP handshake is not backwards compatible.** V16 bundles kcp2k V1.41, which
   added per-connection anti-spoofing cookies. V14 ships the pre-cookie kcp2k. An old
   client cannot complete the handshake with a V16 relay, and a V16 client cannot
-  handshake with a V14 relay — the connection fails before LRM authentication is
+  handshake with a V14 relay. The connection fails before LRM authentication is
   ever reached. If you have players on old builds, they will be unable to connect
   the moment you upgrade the relay.
 - ❌ **Telepathy has been removed from the relay.** A `config.json` with
   `TransportClass: Telepathy.TelepathyTransport` will fail at startup. KCP and
   SimpleWeb are unaffected.
 - ❌ **Mirror 81.4.0 → 93.0.0 on the Unity side.** This is a 12-major-version jump for
-  your whole project, not just the LRM folder — revalidate accordingly. If you
+  your whole project, not just the LRM folder, so revalidate accordingly. If you
   have your own transport code, note that `Transport.OnServerConnected` is
   deprecated in favour of `OnServerConnectedWithAddress` and nothing forwards
   between them; kcp2k raises only the new one. That caught LRM's own direct
   connect module, see [NAT punch and direct connect](#nat-punch-and-direct-connect).
-- ⚠️ **Relay runtime is now .NET 8** (was .NET 5). Docker users are unaffected — the
-  image handles it. Bare VPS/systemd deploys need the .NET 8 runtime installed first.
+- ⚠️ **Relay runtime is now .NET 8** (was .NET 5). Docker users are unaffected;
+  the image handles it. Bare VPS/systemd deploys need the .NET 8 runtime installed first.
 - ✅ **The LRM protocol itself is unchanged.** Opcodes 0–21 and their payloads are
   byte-identical to V14. `config.json` fields and environment variables are unchanged.
 
@@ -127,11 +136,20 @@ shipped client must be updated together.**
 ## Migration from V15
 
 V15 is [jaredbrandjes/Light-Reflective-Mirror](https://github.com/jaredbrandjes/Light-Reflective-Mirror).
-Upgrading from it is straightforward — same Mirror, same kcp2k, same wire protocol.
+Upgrading from it is straightforward: same Mirror, same kcp2k, same wire protocol.
+One behaviour change needs attention before you redeploy.
 
 - ✅ **No handshake change.** `MultiCompiled.dll` is byte-identical, so V15 clients
   connect to a V16 relay and vice versa.
 - ✅ **No config change.** `config.json` fields and environment variables are unchanged.
+- ⚠️ **`Max Players` now includes the host.** The relay counts the room creator
+  in `currentPlayers`, but it used to gate joins on the client list alone, so a room
+  with `Max Players` 2 admitted 2 clients *plus* the host. Rooms now hold one fewer
+  client than they did on V15. **If you want 4 clients plus a host, set `Max Players`
+  to 5.** This is a relay-side fix, so it takes effect when you redeploy the node,
+  not when you update the Unity package. Dedicated servers are unaffected: a
+  `ServerOnly` NetworkManager is not a player, and the client now advertises one
+  extra slot to cancel the relay's count.
 - ⚠️ **`RecreateRoom` (opcodes 22/23) removed from the relay.** No client ever sent
   them. It reassigned `Room.hostId` to any authenticated sender with no ownership
   check, so any client could seize any live room.
@@ -156,15 +174,20 @@ First things first, you will need:
 #### Client Setup
 Attach the LightReflectiveMirrorTransport script to your NetworkManager and set it as the NetworkManager's Transport. Under the transport's **LRM Settings** tab, put in the IP/Port of your relay server.
 
-Then attach the transport LRM should use to reach the relay — `KcpTransport` to match the default relay config, or `SimpleWebTransport` if you need WebGL — and assign it to the **LRM Transport** field (the `clientToServerTransport` variable). This must match the relay's `TransportClass`; see [Server Config](#server-config) below.
+Then attach the transport LRM should use to reach the relay (`KcpTransport` to match the default relay config, or `SimpleWebTransport` if you need WebGL) and assign it to the **LRM Transport** field (the `clientToServerTransport` variable). This must match the relay's `TransportClass`; see [Server Config](#server-config) below.
 
 When you start a server, you can simply get the URI from the transport and use that to connect. If you wish to connect without the URI, the LightReflectiveMirror component has a public "Server ID" field which is what clients would set as the address to connect to. 
 
-If your relay server has a password, enter it in the **LRM Auth Key** field (the `authenticationKey` variable) under the **LRM Settings** tab of the transport inspector, or you wont be able to connect. By default the relays have the password as "Secret Auth Key" — change this on both the relay and the client before exposing a relay publicly, or anyone can use it.
+If your relay server has a password, enter it in the **LRM Auth Key** field (the `authenticationKey` variable) under the **LRM Settings** tab of the transport inspector, or you wont be able to connect. By default the relays have the password as "Secret Auth Key". Change this on both the relay and the client before exposing a relay publicly, or anyone can use it.
 
 ##### Server List
 
 Light Reflective Mirror has a built in room/server list if you would like to use it. To use it you need to set the server values (Server Name, Extra Server Data, Max Players, Is Public Server) under the **Other** tab in the transport inspector. Also if you would like to make the server show on the list, make sure "Is Public Server" is checked. Once you create a server, you can update those variables from the "UpdateRoomInfo" function on the LightReflectiveMirrorTransport script.
+
+> **`Max Players` counts the host.** `Max Players` 4 means the host plus 3 clients.
+> A dedicated server (`NetworkManagerMode.ServerOnly`) is not a player, so in that
+> mode `Max Players` 4 means 4 clients. This changed in V16; see
+> [Migration from V15](#migration-from-v15).
 
 To request the server list you need a reference to the LightReflectiveMirrorTransport from your script and call 'RequestServerList()'. This will invoke a request to the server to update our server list. Once the response is recieved the field 'relayServerList' will be populated and you can get all the servers from there.
  
@@ -181,11 +204,11 @@ TransportClass - The fully-qualified class name of the transport inside `MultiCo
 | Value | Protocol |
 |---|---|
 | `kcp2k.KcpTransport` | UDP (default) |
-| `Mirror.SimpleWebTransport` | WebSockets — required for WebGL |
+| `Mirror.SimpleWebTransport` | WebSockets, required for WebGL |
 | `MultiCompiled.KcpWebCombined` | Both, on separate ports |
 
 **The transport you set here must match the transport you assign as `ClientToServerTransport`
-in Unity.** A KCP relay will not answer a SimpleWeb client, and the failure is silent —
+in Unity.** A KCP relay will not answer a SimpleWeb client, and the failure is silent:
 the client simply never connects. The default on both the relay and the Docker image is
 `kcp2k.KcpTransport`, so if you follow the WebGL/SimpleWeb setup above, change this too.
 
@@ -238,7 +261,7 @@ LRM is a self-hosted, open source, relay/NAT Punchthrough server. It's available
 - **Original**: [Derek-R-S/Light-Reflective-Mirror](https://github.com/Derek-R-S/Light-Reflective-Mirror) (v1-v12)
 - **V14 Base**: [Speidy674/Light-Reflective-Mirror](https://github.com/Speidy674/Light-Reflective-Mirror) (community maintenance)
 - **V15**: [jaredbrandjes/Light-Reflective-Mirror](https://github.com/jaredbrandjes/Light-Reflective-Mirror) (Mirror 93, .NET 8)
-- **V16**: this repository — co-maintained by Speidy674 and jaredbrandjes
+- **V16**: this repository, co-maintained by Speidy674 and jaredbrandjes
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
