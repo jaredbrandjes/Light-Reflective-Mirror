@@ -156,7 +156,7 @@ namespace LightReflectiveMirror
                     }
                     catch (Exception e)
                     {
-                        Debug.LogError($"[LRM] Could not open a server proxy on port {natIP.Port + 1} for {newClientEP}: {e.Message}");
+                        Debug.LogError($"[LRM] Could not open a server proxy on port {natIP.Port + 1} for {newClientEP}: {e}");
                     }
                 }
             }
@@ -174,7 +174,7 @@ namespace LightReflectiveMirror
                     catch (Exception e)
                     {
                         _clientProxy = null;
-                        Debug.LogError($"[LRM] Could not open the client proxy on port {natIP.Port - 1}: {e.Message}");
+                        Debug.LogError($"[LRM] Could not open the client proxy on port {natIP.Port - 1}: {e}");
                     }
                 }
                 else
