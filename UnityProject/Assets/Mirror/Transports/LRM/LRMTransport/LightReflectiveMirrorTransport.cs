@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -55,6 +55,9 @@ namespace LightReflectiveMirror {
         private void Disconnected () {
             _connectedToRelay = false;
             _isAuthenticated = false;
+
+            // Relay session is gone, so it has dropped our room membership too.
+            _joinedRelayRoom = false;
             disconnectedFromRelay?.Invoke ();
             serverStatus = "Disconnected from relay.";
         }
@@ -203,6 +206,10 @@ namespace LightReflectiveMirror {
                         break;
 
                     case OpCodes.ServerLeft:
+                        // The relay has already dropped us from the room, so there is
+                        // nothing left to leave.
+                        _joinedRelayRoom = false;
+
                         if (IsClient) {
                             IsClient = false;
                             OnClientDisconnected?.Invoke ();

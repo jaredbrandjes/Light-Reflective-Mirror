@@ -76,6 +76,7 @@ namespace LightReflectiveMirror {
                 _clientSendBuffer.WriteString (ref pos, GetLocalIp () ?? "0.0.0.0");
 
                 IsClient = true;
+                _joinedRelayRoom = true;
                 clientToServerTransport.ClientSend (new ArraySegment<byte> (_clientSendBuffer, 0, pos), 0);
             } else {
                 StartCoroutine (JoinOtherRelayAndMatch (room, address));
@@ -93,11 +94,18 @@ namespace LightReflectiveMirror {
             try {
                 bool wasClient = IsClient;
                 bool wasDirect = _directConnected;
+                bool wasInRoom = _joinedRelayRoom;
 
                 _isClient = false;
                 _directConnected = false;
+                _joinedRelayRoom = false;
 
-                if (wasClient && Available ()) {
+                // Keyed off _joinedRelayRoom, not _isClient. A failed direct
+                // connection clears _isClient in DirectDisconnected before Mirror
+                // reaches here, and skipping LeaveRoom then left the relay holding
+                // our slot until the whole relay session dropped - two of those
+                // permanently fill a 2-player room.
+                if (wasInRoom && Available ()) {
                     int pos = 0;
                     _clientSendBuffer.WriteByte (ref pos, (byte) OpCodes.LeaveRoom);
                     clientToServerTransport.ClientSend (new ArraySegment<byte> (_clientSendBuffer, 0, pos), 0);

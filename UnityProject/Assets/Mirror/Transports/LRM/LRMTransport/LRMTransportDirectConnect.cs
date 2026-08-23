@@ -93,6 +93,7 @@ namespace LightReflectiveMirror
                 _clientSendBuffer.WriteString(ref pos, GetLocalIp() ?? "0.0.0.0");
 
                 _isClient = true;
+                _joinedRelayRoom = true;
 
                 clientToServerTransport.ClientSend(new System.ArraySegment<byte>(_clientSendBuffer, 0, pos), 0);
             }

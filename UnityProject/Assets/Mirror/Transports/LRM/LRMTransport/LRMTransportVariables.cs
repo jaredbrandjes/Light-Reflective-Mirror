@@ -69,6 +69,12 @@ namespace LightReflectiveMirror {
         private bool _connectedToRelay = false;
         private bool _isClient = false;
 
+        // Whether the relay still counts us as a member of a room. Deliberately
+        // separate from _isClient: a dropped direct connection clears _isClient
+        // before Mirror calls ClientDisconnect, so keying LeaveRoom off _isClient
+        // silently leaked the room slot until the relay session itself ended.
+        private bool _joinedRelayRoom = false;
+
         public bool IsClient {
             get => _isClient;
             set => _isClient = value;
