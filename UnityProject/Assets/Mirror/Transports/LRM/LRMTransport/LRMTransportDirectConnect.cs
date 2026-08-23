@@ -6,12 +6,32 @@ namespace LightReflectiveMirror
 {
     public partial class LightReflectiveMirrorTransport : Transport
     {
-        public void DirectAddClient(int clientID)
+        public void DirectAddClient(int clientID, string clientAddress = null)
         {
             if (!_isServer)
                 return;
 
+            // Both OnServerConnected and OnServerConnectedWithAddress are wired on
+            // the direct transport, since which one fires depends on the transport
+            // and the Mirror version. Ignore the second call for the same client.
+            if (_connectedDirectClients.TryGetByFirst(clientID, out int _))
+                return;
+
             _connectedDirectClients.Add(clientID, _currentMemberId);
+
+            // Punched clients reach us through a local SocketProxy, so the address
+            // the transport reports is our own loopback and identifies nobody.
+            // Keep DIRECT-<id> in that case, which at least distinguishes clients.
+            if (!string.IsNullOrEmpty(clientAddress)
+                && System.Net.IPAddress.TryParse(clientAddress, out System.Net.IPAddress parsed)
+                && !System.Net.IPAddress.IsLoopback(parsed))
+            {
+                _directClientAddresses[_currentMemberId] = clientAddress;
+            }
+
+            // Deliberately raises only the obsolete callback: NetworkServer
+            // subscribes to BOTH, so raising both would register the connection
+            // twice.
             OnServerConnected?.Invoke(_currentMemberId);
             _currentMemberId++;
         }
@@ -29,6 +49,7 @@ namespace LightReflectiveMirror
 
             OnServerDisconnected?.Invoke(connectionId);
             _connectedDirectClients.Remove(clientID);
+            _directClientAddresses.Remove(connectionId);
         }
 
         public void DirectReceiveData(ArraySegment<byte> data, int channel, int clientID = -1)

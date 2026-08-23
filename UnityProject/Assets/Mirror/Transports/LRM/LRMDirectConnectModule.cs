@@ -31,6 +31,16 @@ public class LRMDirectConnectModule : MonoBehaviour
         }
 
         directConnectTransport.OnServerConnected = (OnServerConnected);
+
+        // Mirror 93 deprecated OnServerConnected in favour of this, and the base
+        // Transport does NOT forward between them. kcp2k raises only this one, and
+        // does so with an unguarded .Invoke (KcpTransport.cs:125), so leaving it
+        // null threw a NullReferenceException the instant a client authenticated.
+        // kcp2k's catch-all turned that into Disconnect(), tearing the connection
+        // down before its Hello reply was flushed - the client then received
+        // nothing and timed out after 10s. Reproduced and fixed A/B on loopback.
+        directConnectTransport.OnServerConnectedWithAddress = (OnServerConnectedWithAddress);
+
         directConnectTransport.OnServerDataReceived = (OnServerDataReceived);
         directConnectTransport.OnServerDisconnected = (OnServerDisconnected);
         directConnectTransport.OnServerError = (OnServerError);
@@ -154,6 +164,13 @@ public class LRMDirectConnectModule : MonoBehaviour
         if (showDebugLogs)
             Debug.Log("Direct Connect Client Connected");
         lightMirrorTransport.DirectAddClient(clientID);
+    }
+
+    void OnServerConnectedWithAddress(int clientID, string clientAddress)
+    {
+        if (showDebugLogs)
+            Debug.Log($"Direct Connect Client Connected from {clientAddress}");
+        lightMirrorTransport.DirectAddClient(clientID, clientAddress);
     }
 
     void OnServerDataReceived(int clientID, ArraySegment<byte> data, int channel)
