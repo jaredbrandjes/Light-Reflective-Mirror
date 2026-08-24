@@ -33,6 +33,14 @@ namespace LightReflectiveMirror
         public string hostLocalIP;
         [JsonIgnore]
         public bool useNATPunch = false;
+
+        /// <summary>
+        /// Host port for direct connections. The meaning depends on useNATPunch:
+        /// when true this is the host's LOCAL NAT puncher port and its direct
+        /// server sits at port + 1; when false it is the direct connect
+        /// transport's own port. Hosts older than V16 report 0 while punching.
+        /// Do not read this without checking useNATPunch.
+        /// </summary>
         [JsonIgnore]
         public int port;
     }

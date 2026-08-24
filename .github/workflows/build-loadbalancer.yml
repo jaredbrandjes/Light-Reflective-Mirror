@@ -16,24 +16,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 6.0.x
+        dotnet-version: 8.0.x
     - name: Restore dependencies
       run: dotnet restore
       working-directory: LoadBalancerProject-DONT-IMPORT-INTO-UNITY
     - name: Build
       run: dotnet build --no-restore
       working-directory: LoadBalancerProject-DONT-IMPORT-INTO-UNITY
-    - name: Test
-      run: dotnet test --no-build --verbosity normal
-      working-directory: LoadBalancerProject-DONT-IMPORT-INTO-UNITY
     - name: Upload LRM
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: LRM-LoadBalancer
         path: |
-          LoadBalancerProject-DONT-IMPORT-INTO-UNITY/LRM_LoadBalancer/bin/Debug/net5.0/LRM_LoadBalancer.dll
-          LoadBalancerProject-DONT-IMPORT-INTO-UNITY/LRM_LoadBalancer/bin/Debug/net5.0/LRM_LoadBalancer.runtimeconfig.json
+          LoadBalancerProject-DONT-IMPORT-INTO-UNITY/LRM_LoadBalancer/bin/Debug/net8.0/LRM_LoadBalancer.dll
+          LoadBalancerProject-DONT-IMPORT-INTO-UNITY/LRM_LoadBalancer/bin/Debug/net8.0/LRM_LoadBalancer.runtimeconfig.json

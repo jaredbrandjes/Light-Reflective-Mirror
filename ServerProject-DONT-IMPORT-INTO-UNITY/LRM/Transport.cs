@@ -1,7 +1,6 @@
 ﻿using System;
 
-namespace Mirror
-{
+namespace Mirror {
     /// <summary>
     /// Abstract transport layer component
     /// </summary>
@@ -36,8 +35,7 @@ namespace Mirror
     ///   </description></item>
     /// </list>
     /// </remarks>
-    public abstract class Transport
-    {
+    public abstract class Transport {
         /// <summary>
         /// The current transport used by Mirror.
         /// </summary>
@@ -50,54 +48,54 @@ namespace Mirror
         /// <para>Example usage: return Application.platform == RuntimePlatform.WebGLPlayer</para>
         /// </summary>
         /// <returns>True if this transport works in the current platform</returns>
-        public abstract bool Available();
+        public abstract bool Available ();
 
         #region Client
+
         /// <summary>
         /// Notify subscribers when when this client establish a successful connection to the server
         /// <para>callback()</para>
         /// </summary>
-        public Action OnClientConnected = () => Console.WriteLine("OnClientConnected called with no handler");
+        public Action OnClientConnected = () => Console.WriteLine ("OnClientConnected called with no handler");
 
         /// <summary>
         /// Notify subscribers when this client receive data from the server
         /// <para>callback(ArraySegment&lt;byte&gt; data, int channel)</para>
         /// </summary>
-        public Action<ArraySegment<byte>, int> OnClientDataReceived = (data, channel) => Console.WriteLine("OnClientDataReceived called with no handler");
+        public Action<ArraySegment<byte>, int> OnClientDataReceived = (data, channel) => Console.WriteLine ("OnClientDataReceived called with no handler");
 
         /// <summary>
         /// Notify subscribers when this client encounters an error communicating with the server
         /// <para>callback(Exception e)</para>
         /// </summary>
-        public Action<Exception> OnClientError = (error) => Console.WriteLine("OnClientError called with no handler");
+        public Action<Exception> OnClientError = (error) => Console.WriteLine ("OnClientError called with no handler");
 
         /// <summary>
         /// Notify subscribers when this client disconnects from the server
         /// <para>callback()</para>
         /// </summary>
-        public Action OnClientDisconnected = () => Console.WriteLine("OnClientDisconnected called with no handler");
+        public Action OnClientDisconnected = () => Console.WriteLine ("OnClientDisconnected called with no handler");
 
         /// <summary>
         /// Determines if we are currently connected to the server
         /// </summary>
         /// <returns>True if a connection has been established to the server</returns>
-        public abstract bool ClientConnected();
+        public abstract bool ClientConnected ();
 
         /// <summary>
         /// Establish a connection to a server
         /// </summary>
         /// <param name="address">The IP address or FQDN of the server we are trying to connect to</param>
-        public abstract void ClientConnect(string address);
+        public abstract void ClientConnect (string address);
 
         /// <summary>
         /// Establish a connection to a server
         /// </summary>
         /// <param name="uri">The address of the server we are trying to connect to</param>
-        public virtual void ClientConnect(Uri uri)
-        {
+        public virtual void ClientConnect (Uri uri) {
             // By default, to keep backwards compatibility, just connect to the host
             // in the uri
-            ClientConnect(uri.Host);
+            ClientConnect (uri.Host);
         }
 
         /// <summary>
@@ -107,59 +105,58 @@ namespace Mirror
         /// but some transports might want to provide unreliable, encrypted, compressed, or any other feature
         /// as new channels</param>
         /// <param name="segment">The data to send to the server. Will be recycled after returning, so either use it directly or copy it internally. This allows for allocation-free sends!</param>
-        public abstract void ClientSend(int channelId, ArraySegment<byte> segment);
+        public abstract void ClientSend (ArraySegment<byte> segment, int channelId = Channels.Reliable);
 
         /// <summary>
         /// Disconnect this client from the server
         /// </summary>
-        public abstract void ClientDisconnect();
+        public abstract void ClientDisconnect ();
 
         #endregion
 
         #region Server
-
 
         /// <summary>
         /// Retrieves the address of this server.
         /// Useful for network discovery
         /// </summary>
         /// <returns>the url at which this server can be reached</returns>
-        public abstract Uri ServerUri();
+        public abstract Uri ServerUri ();
 
         /// <summary>
         /// Notify subscribers when a client connects to this server
         /// <para>callback(int connId)</para>
         /// </summary>
-        public Action<int> OnServerConnected = (connId) => Console.WriteLine("OnServerConnected called with no handler");
+        public Action<int> OnServerConnected = (connId) => Console.WriteLine ("OnServerConnected called with no handler");
 
         /// <summary>
         /// Notify subscribers when this server receives data from the client
         /// <para>callback(int connId, ArraySegment&lt;byte&gt; data, int channel)</para>
         /// </summary>
-        public Action<int, ArraySegment<byte>, int> OnServerDataReceived = (connId, data, channel) => Console.WriteLine("OnServerDataReceived called with no handler");
+        public Action<int, ArraySegment<byte>, int> OnServerDataReceived = (connId, data, channel) => Console.WriteLine ("OnServerDataReceived called with no handler");
 
         /// <summary>
         /// Notify subscribers when this server has some problem communicating with the client
         /// <para>callback(int connId, Exception e)</para>
         /// </summary>
-        public Action<int, Exception> OnServerError = (connId, error) => Console.WriteLine("OnServerError called with no handler");
+        public Action<int, Exception> OnServerError = (connId, error) => Console.WriteLine ("OnServerError called with no handler");
 
         /// <summary>
         /// Notify subscribers when a client disconnects from this server
         /// <para>callback(int connId)</para>
         /// </summary>
-        public Action<int> OnServerDisconnected = (connId) => Console.WriteLine("OnServerDisconnected called with no handler");
+        public Action<int> OnServerDisconnected = (connId) => Console.WriteLine ("OnServerDisconnected called with no handler");
 
         /// <summary>
         /// Determines if the server is up and running
         /// </summary>
         /// <returns>true if the transport is ready for connections from clients</returns>
-        public abstract bool ServerActive();
+        public abstract bool ServerActive ();
 
         /// <summary>
         /// Start listening for clients
         /// </summary>
-        public abstract void ServerStart(ushort port);
+        public abstract void ServerStart (ushort port);
 
         /// <summary>
         /// Send data to a client.
@@ -168,26 +165,26 @@ namespace Mirror
         /// <param name="channelId">The channel to be used.  Transports can use channels to implement
         /// other features such as unreliable, encryption, compression, etc...</param>
         /// <param name="data"></param>
-        public abstract void ServerSend(int connectionId, int channelId, ArraySegment<byte> segment);
+        public abstract void ServerSend (int connectionId, ArraySegment<byte> segment, int channelId = Channels.Reliable);
 
         /// <summary>
         /// Disconnect a client from this server.  Useful to kick people out.
         /// </summary>
         /// <param name="connectionId">the id of the client to disconnect</param>
         /// <returns>true if the client was kicked</returns>
-        public abstract bool ServerDisconnect(int connectionId);
+        public abstract bool ServerDisconnect (int connectionId);
 
         /// <summary>
         /// Get the client address
         /// </summary>
         /// <param name="connectionId">id of the client</param>
         /// <returns>address of the client</returns>
-        public abstract string ServerGetClientAddress(int connectionId);
+        public abstract string ServerGetClientAddress (int connectionId);
 
         /// <summary>
         /// Stop listening for clients and disconnect all existing clients
         /// </summary>
-        public abstract void ServerStop();
+        public abstract void ServerStop ();
 
         #endregion
 
@@ -203,12 +200,16 @@ namespace Mirror
         /// </summary>
         /// <param name="channelId">channel id</param>
         /// <returns>the size in bytes that can be sent via the provided channel</returns>
-        public abstract int GetMaxPacketSize(int channelId = 0);
+        public abstract int GetMaxPacketSize (int channelId = Channels.Reliable);
+
+        public virtual int GetBatchThreshold (int channelId = Channels.Reliable) {
+            return GetMaxPacketSize (channelId);
+        }
 
         /// <summary>
         /// Shut down the transport, both as client and server
         /// </summary>
-        public abstract void Shutdown();
+        public abstract void Shutdown ();
 
         // block Update() to force Transports to use LateUpdate to avoid race
         // conditions. messages should be processed after all the game state
@@ -225,22 +226,21 @@ namespace Mirror
         //            ShoulderRotation.LateUpdate, resulting in projectile
         //            spawns at the point before shoulder rotation.
 #pragma warning disable UNT0001 // Empty Unity message
-        public abstract void Update();
+        public abstract void Update ();
 
-        public abstract void Awake();
+        public abstract void Awake ();
 #pragma warning restore UNT0001 // Empty Unity message
 
         /// <summary>
         /// called when quitting the application by closing the window / pressing stop in the editor
         /// <para>virtual so that inheriting classes' OnApplicationQuit() can call base.OnApplicationQuit() too</para>
         /// </summary>
-        public virtual void OnApplicationQuit()
-        {
+        public virtual void OnApplicationQuit () {
             // stop transport (e.g. to shut down threads)
             // (when pressing Stop in the Editor, Unity keeps threads alive
             //  until we press Start again. so if Transports use threads, we
             //  really want them to end now and not after next start)
-            Shutdown();
+            Shutdown ();
         }
     }
 }

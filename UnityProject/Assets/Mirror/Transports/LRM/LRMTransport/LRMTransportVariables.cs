@@ -1,13 +1,11 @@
-﻿using Mirror;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using Mirror;
 using UnityEngine.Events;
 
-namespace LightReflectiveMirror
-{
-    public partial class LightReflectiveMirrorTransport : Transport
-    {
+namespace LightReflectiveMirror {
+    public partial class LightReflectiveMirrorTransport : Transport {
         // Connection/auth variables
         public Transport clientToServerTransport;
         public string serverIP = null;
@@ -24,6 +22,23 @@ namespace LightReflectiveMirror
         public bool useNATPunch = false;
         public int NATPunchtroughPort = -1;
         private const int NAT_PUNCH_ATTEMPTS = 3;
+        private const int NAT_PORT_BIND_ATTEMPTS = 100;
+        private const int NAT_HEARTBEAT_FAILURE_LIMIT = 5;
+
+        // Punch burst driven by the NATPunch coroutine, distinct from the
+        // NAT_PUNCH_ATTEMPTS burst sent inline on RequestNATConnection.
+        private const int NAT_PUNCH_COROUTINE_ATTEMPTS = 10;
+        private const float NAT_PUNCH_COROUTINE_INTERVAL = 0.25f;
+
+        private static readonly byte[] _natHeartbeatData = new byte[1] { 0 };
+        private int _natHeartbeatFailures = 0;
+
+        // Resolved lazily by GetLocalIp(). Per-instance rather than static so the
+        // cache follows the transport's own serverIP and can be invalidated on
+        // teardown; a stale address here makes the NAT puncher bind somewhere
+        // with no route.
+        private string _cachedLocalIp;
+        private bool _localIpResolved;
 
         // LLB variables (LRM Load Balancer)
         public bool useLoadBalancer = false;
@@ -33,6 +48,11 @@ namespace LightReflectiveMirror
         // Server hosting variables
         public string serverName = "My awesome server!";
         public string extraServerData = "Map 1";
+        /// <summary>
+        /// Maximum players in the room, counting the host. A dedicated server
+        /// (NetworkManager mode ServerOnly) is not counted, so this is the number
+        /// of clients that can join in that case.
+        /// </summary>
         public int maxServerPlayers = 10;
         public bool isPublicServer = true;
 
@@ -40,7 +60,7 @@ namespace LightReflectiveMirror
 
         // Server list variables
         public UnityEvent serverListUpdated;
-        public List<Room> relayServerList { private set; get; } = new List<Room>();
+        public List<Room> relayServerList { private set; get; } = new List<Room> ();
 
         // Current Server Information
         public string serverStatus = "Not Started.";
@@ -53,8 +73,38 @@ namespace LightReflectiveMirror
         private byte[] _clientSendBuffer;
         private bool _connectedToRelay = false;
         private bool _isClient = false;
+
+        // Whether the relay still counts us as a member of a room. Deliberately
+        // separate from _isClient: a dropped direct connection clears _isClient
+        // before Mirror calls ClientDisconnect, so keying LeaveRoom off _isClient
+        // silently leaked the room slot until the relay session itself ended.
+        private bool _joinedRelayRoom = false;
+
+        public bool IsClient {
+            get => _isClient;
+            set => _isClient = value;
+        }
         private bool _isServer = false;
+
+        public bool IsServer {
+            get => _isServer;
+            set => _isServer = value;
+        }
+
         private bool _directConnected = false;
+
+        // Set while we are intentionally tearing down a client connection.
+        // Callbacks arriving from the direct connect transport during teardown
+        // must not be mistaken for a *failed* direct connection, which would
+        // trigger the relay fallback in DirectDisconnected() and silently
+        // rejoin the room we just left.
+        private bool _intentionalDisconnect = false;
+
+        // Whether a NAT receive is currently pending. The relay sends
+        // RequestNATConnection once per connection, so on a reconnect this tells us
+        // whether the existing chain is still alive or needs re-arming.
+        private bool _natReceiveStarted = false;
+
         private bool _isAuthenticated = false;
         private int _currentMemberId;
         private bool _callbacksInitialized = false;
@@ -65,9 +115,20 @@ namespace LightReflectiveMirror
         private byte[] _punchData = new byte[1] { 1 };
         private IPEndPoint _directConnectEndpoint;
         private SocketProxy _clientProxy;
-        private BiDictionary<IPEndPoint, SocketProxy> _serverProxies = new BiDictionary<IPEndPoint, SocketProxy>();
-        private BiDictionary<int, int> _connectedRelayClients = new BiDictionary<int, int>();
-        private BiDictionary<int, int> _connectedDirectClients = new BiDictionary<int, int>();
+        private BiDictionary<IPEndPoint, SocketProxy> _serverProxies = new BiDictionary<IPEndPoint, SocketProxy> ();
+
+        // _serverProxies is touched from the main thread (the heartbeat sweep,
+        // ServerStart/ServerStop, teardown) AND from NAT receive callbacks on
+        // threadpool threads. Several punch datagrams arrive at once, so without
+        // this the check-then-add in RecvData races and Dictionary.Add throws
+        // "An item with the same key has already been added".
+        private readonly object _serverProxyLock = new object ();
+        private BiDictionary<int, int> _connectedRelayClients = new BiDictionary<int, int> ();
+        private BiDictionary<int, int> _connectedDirectClients = new BiDictionary<int, int> ();
+
+        // Real remote address per direct-connect connection, when the transport
+        // reports one. Only used to make ServerGetClientAddress meaningful.
+        private Dictionary<int, string> _directClientAddresses = new Dictionary<int, string> ();
         private bool _serverListUpdated = false;
     }
 

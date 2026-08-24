@@ -1,9 +1,12 @@
-FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build-env
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-env
 WORKDIR /lrm
 COPY ./ServerProject-DONT-IMPORT-INTO-UNITY ./
-RUN dotnet publish LRM.sln --runtime ubuntu.20.04-x64 -c Release -o /out/
+# Published per-project rather than via LRM.sln: a solution-level -o raises
+# NETSDK1194 and is unsupported since SDK 7.0.200.
+RUN dotnet publish MultiCompiled/MultiCompiled.csproj --runtime linux-x64 -c Release -o /out/ \
+ && dotnet publish LRM/LRM.csproj --runtime linux-x64 -c Release -o /out/
 
-FROM mcr.microsoft.com/dotnet/aspnet:5.0
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /lrm
 COPY --from=build-env /out/ .
 

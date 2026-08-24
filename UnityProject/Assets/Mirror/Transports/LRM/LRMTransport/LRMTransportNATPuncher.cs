@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Net;
+using System.Net.Sockets;
 using UnityEngine;
 
 namespace LightReflectiveMirror
@@ -10,58 +11,241 @@ namespace LightReflectiveMirror
     {
         IEnumerator NATPunch(IPEndPoint remoteAddress)
         {
-            for (int i = 0; i < 10; i++)
+            int failures = 0;
+            SocketError lastError = SocketError.Success;
+
+            for (int i = 0; i < NAT_PUNCH_COROUTINE_ATTEMPTS; i++)
             {
-                _NATPuncher.Send(_punchData, 1, remoteAddress);
-                yield return new WaitForSeconds(0.25f);
+                // A failed punch must not kill the coroutine. Unity runs the first
+                // segment synchronously inside StartCoroutine, so an escaping
+                // SocketException here surfaces as an unhandled exception and
+                // abandons the remaining attempts.
+                bool socketGone = _NATPuncher == null;
+
+                if (!socketGone)
+                {
+                    try
+                    {
+                        _NATPuncher.Send(_punchData, 1, remoteAddress);
+                    }
+                    catch (SocketException e)
+                    {
+                        // Counted rather than logged per attempt; a peer that cannot
+                        // be punched would otherwise emit one line per attempt.
+                        failures++;
+                        lastError = e.SocketErrorCode;
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        socketGone = true;
+                    }
+                }
+
+                // yield cannot appear inside a catch clause, so bail out here.
+                if (socketGone)
+                    break;
+
+                yield return new WaitForSeconds(NAT_PUNCH_COROUTINE_INTERVAL);
+            }
+
+            if (failures > 0)
+                Debug.LogWarning($"[LRM] {failures}/{NAT_PUNCH_COROUTINE_ATTEMPTS} NAT punch attempts to {remoteAddress} failed, last error {lastError}.");
+        }
+
+        /// <summary>
+        /// Arms the next NAT receive. Safe to call repeatedly; _natReceiveStarted
+        /// tracks whether a receive is actually pending so a dead chain can be
+        /// restarted by the next RequestNATConnection.
+        /// </summary>
+        void BeginNATReceive()
+        {
+            if (_NATPuncher == null)
+            {
+                _natReceiveStarted = false;
+                return;
+            }
+
+            try
+            {
+                _NATPuncher.BeginReceive(new AsyncCallback(RecvData), _NATPuncher);
+                _natReceiveStarted = true;
+            }
+            catch (ObjectDisposedException)
+            {
+                _natReceiveStarted = false;
+            }
+            catch (SocketException e)
+            {
+                _natReceiveStarted = false;
+                Debug.LogError($"[LRM] Could not arm NAT receive: {e.SocketErrorCode}");
             }
         }
 
         void RecvData(IAsyncResult result)
         {
+            byte[] data;
             IPEndPoint newClientEP = new IPEndPoint(IPAddress.Any, 0);
-            var data = _NATPuncher.EndReceive(result, ref newClientEP);
-            _NATPuncher.BeginReceive(new AsyncCallback(RecvData), _NATPuncher);
 
-            if (!newClientEP.Address.Equals(_relayPuncherIP.Address))
+            // Snapshot: TeardownNATPuncher can null this from the main thread
+            // between the callback firing and EndReceive running.
+            UdpClient puncher = _NATPuncher;
+
+            if (puncher == null)
             {
-                if (_isServer)
+                _natReceiveStarted = false;
+                return;
+            }
+
+            try
+            {
+                data = puncher.EndReceive(result, ref newClientEP);
+            }
+            catch (ObjectDisposedException)
+            {
+                // Socket torn down underneath us. Leave the chain unarmed so the
+                // next RequestNATConnection can restart it.
+                _natReceiveStarted = false;
+                return;
+            }
+            catch (SocketException)
+            {
+                // UDP reports an earlier send's ICMP Port Unreachable as a receive
+                // error. Routine while punching at a peer that is not listening
+                // yet, so keep the chain alive rather than letting it die.
+                BeginNATReceive();
+                return;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[LRM] NAT receive failed: {e.Message}");
+                BeginNATReceive();
+                return;
+            }
+
+            BeginNATReceive();
+
+            // Cannot tell whether this came from the relay if we have no puncher
+            // endpoint yet, so ignore it rather than dereferencing null.
+            if (_relayPuncherIP == null || newClientEP.Address.Equals(_relayPuncherIP.Address))
+                return;
+
+            // Runs on a threadpool thread, so the main thread can null _NATIP
+            // underneath us via TeardownNATPuncher. Snapshot it once; without
+            // this the proxy ports below throw off-main-thread where Unity will
+            // not surface the exception.
+            IPEndPoint natIP = _NATIP;
+
+            if (natIP == null)
+                return;
+
+            if (_isServer)
+            {
+                SocketProxy proxy = null;
+                bool created = false;
+
+                // Check-and-add must be atomic: the client sends a burst of punch
+                // packets, so several of these callbacks run concurrently for the
+                // same endpoint and would otherwise all try to create a proxy.
+                try
                 {
-                    if (_serverProxies.TryGetByFirst(newClientEP, out SocketProxy foundProxy))
+                    lock (_serverProxyLock)
                     {
-                        if (data.Length > 2)
-                            foundProxy.RelayData(data, data.Length);
-                    }
-                    else
-                    {
-                        _serverProxies.Add(newClientEP, new SocketProxy(_NATIP.Port + 1, newClientEP));
-                        _serverProxies.GetByFirst(newClientEP).dataReceived += ServerProcessProxyData;
+                        if (!_serverProxies.TryGetByFirst(newClientEP, out proxy))
+                        {
+                            proxy = new SocketProxy(natIP.Port + 1, newClientEP);
+                            proxy.dataReceived += ServerProcessProxyData;
+                            _serverProxies.Add(newClientEP, proxy);
+                            created = true;
+                        }
                     }
                 }
-
-                if (_isClient)
+                catch (Exception e)
                 {
-                    if (_clientProxy == null)
+                    Debug.LogError($"[LRM] Could not open a server proxy on port {natIP.Port + 1} for {newClientEP}: {e}");
+                    proxy = null;
+                }
+
+                // Outside the lock so a blocking socket call cannot stall the main
+                // thread's sweep, but still guarded: this is a threadpool callback,
+                // and the sweep can dispose this proxy between the release and here.
+                try
+                {
+                    if (created)
+                        proxy.Start();
+                    else if (proxy != null && data.Length > 2)
+                        proxy.RelayData(data, data.Length);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"[LRM] Server proxy for {newClientEP} failed after creation: {e.Message}");
+                }
+            }
+
+            if (_isClient)
+            {
+                if (_clientProxy == null)
+                {
+                    try
                     {
-                        _clientProxy = new SocketProxy(_NATIP.Port - 1);
+                        _clientProxy = new SocketProxy(natIP.Port - 1);
                         _clientProxy.dataReceived += ClientProcessProxyData;
+                        _clientProxy.Start();
                     }
-                    else
+                    catch (Exception e)
                     {
-                        _clientProxy.ClientRelayData(data, data.Length);
+                        // Dispose before dropping it: the constructor has already
+                        // bound the socket, so nulling alone leaks the port.
+                        _clientProxy?.Dispose();
+                        _clientProxy = null;
+                        Debug.LogError($"[LRM] Could not open the client proxy on port {natIP.Port - 1}: {e}");
                     }
+                }
+                else
+                {
+                    _clientProxy.ClientRelayData(data, data.Length);
                 }
             }
         }
 
         void ServerProcessProxyData(IPEndPoint remoteEndpoint, byte[] data)
         {
-            _NATPuncher.Send(data, data.Length, remoteEndpoint);
+            // Runs on a proxy's threadpool callback, where the puncher may have
+            // been torn down and an unhandled throw would be invisible.
+            var puncher = _NATPuncher;
+
+            if (puncher == null || remoteEndpoint == null)
+                return;
+
+            try
+            {
+                puncher.Send(data, data.Length, remoteEndpoint);
+            }
+            catch (ObjectDisposedException) { }
+            catch (SocketException e)
+            {
+                Debug.LogWarning($"[LRM] Proxy relay to {remoteEndpoint} failed: {e.SocketErrorCode}");
+            }
         }
 
         void ClientProcessProxyData(IPEndPoint _, byte[] data)
         {
-            _NATPuncher.Send(data, data.Length, _directConnectEndpoint);
+            // Same threadpool-callback hazards as ServerProcessProxyData: the main
+            // thread can null both of these via TeardownNATPuncher.
+            var puncher = _NATPuncher;
+            var target = _directConnectEndpoint;
+
+            if (puncher == null || target == null)
+                return;
+
+            try
+            {
+                puncher.Send(data, data.Length, target);
+            }
+            catch (ObjectDisposedException) { }
+            catch (SocketException e)
+            {
+                Debug.LogWarning($"[LRM] Proxy relay to {target} failed: {e.SocketErrorCode}");
+            }
         }
     }
 }
