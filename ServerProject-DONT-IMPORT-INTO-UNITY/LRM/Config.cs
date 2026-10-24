@@ -28,6 +28,12 @@ namespace LightReflectiveMirror
         // longer values are cut to these lengths (in characters).
         public int MaxServerNameLength = 64;
         public int MaxServerDataLength = 1024;
+        // Milliseconds a client has to send the auth key after connecting.
+        public int AuthenticationTimeout = 10000;
+        // Connections allowed from one IP. Players behind one router share an
+        // IP, and behind a reverse proxy every client has the proxy's IP, so
+        // set this to 0 in that case.
+        public int MaxConnectionsPerIP = 32;
 
         //========================
         // Endpoint REST API Settings

@@ -1,5 +1,6 @@
 ﻿using Mirror;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -25,6 +26,11 @@ namespace LightReflectiveMirror
         private List<int> _currentConnections = new();
         public Dictionary<int, IPEndPoint> NATConnections = new();
         private BiDictionary<int, string> _pendingNATPunches = new();
+        // filled by the NAT punch thread, drained on the main loop: the dictionaries above are not thread safe
+        private ConcurrentQueue<(string natID, IPEndPoint endpoint)> _receivedNATPunches = new();
+
+        private Dictionary<int, string> _connectionAddresses = new();
+        private Dictionary<string, int> _connectionsPerAddress = new();
         private int _currentHeartbeatTimer = 0;
 
         private byte[] _NATRequest = new byte[500];

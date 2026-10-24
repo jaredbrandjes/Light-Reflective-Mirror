@@ -39,6 +39,8 @@ namespace LightReflectiveMirror {
                     conf.RandomlyGeneratedIDLength = int.Parse (Environment.GetEnvironmentVariable ("RANDOMLY_GENERATED_ID_LENGTH") ?? "5");
                     conf.MaxServerNameLength = int.Parse (Environment.GetEnvironmentVariable ("MAX_SERVER_NAME_LENGTH") ?? "64");
                     conf.MaxServerDataLength = int.Parse (Environment.GetEnvironmentVariable ("MAX_SERVER_DATA_LENGTH") ?? "1024");
+                    conf.AuthenticationTimeout = int.Parse (Environment.GetEnvironmentVariable ("AUTH_TIMEOUT") ?? "10000");
+                    conf.MaxConnectionsPerIP = int.Parse (Environment.GetEnvironmentVariable ("MAX_CONNECTIONS_PER_IP") ?? "32");
                     conf.UseEndpoint = bool.Parse (Environment.GetEnvironmentVariable ("USE_ENDPOINT") ?? "true");
                     conf.EndpointPort = ushort.Parse (Environment.GetEnvironmentVariable ("ENDPOINT_PORT") ?? "8080");
                     conf.EndpointServerList = bool.Parse (Environment.GetEnvironmentVariable ("ENDPOINT_SERVERLIST") ?? "true");
@@ -91,6 +93,8 @@ namespace LightReflectiveMirror {
             byte[] heartbeat = new byte[] { 200 };
 
             while (true) {
+                ProcessNATPunches ();
+
                 try {
                     if (_updateMethod != null) _updateMethod.Invoke (transport, null);
                     if (_lateUpdateMethod != null) _lateUpdateMethod.Invoke (transport, null);
@@ -106,6 +110,8 @@ namespace LightReflectiveMirror {
                     for (int i = 0; i < _currentConnections.Count; i++)
                         transport.ServerSend (_currentConnections[i], new ArraySegment<byte> (heartbeat), 0);
 
+                    _relay.DisconnectUnauthenticatedClients ();
+
                     if (conf.UseLoadBalancer) {
                         if (DateTime.Now > Endpoint.lastPing.AddSeconds (60)) {
                             // Dont await that on main thread. It would cause a lag spike for clients.
@@ -114,8 +120,6 @@ namespace LightReflectiveMirror {
 #pragma warning restore CS4014
                         }
                     }
-
-                    GC.Collect ();
                 }
 
                 await Task.Delay (conf.UpdateLoopTime);

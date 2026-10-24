@@ -33,6 +33,12 @@ namespace LightReflectiveMirror {
             };
 
             transport.OnServerConnected = (clientID) => {
+                if (!TryAddConnectionAddress (clientID)) {
+                    WriteLogMessage ($"Transport Connected, Client: {clientID}, too many connections from its IP! Disconnecting...", ConsoleColor.Yellow);
+                    transport.ServerDisconnect (clientID);
+                    return;
+                }
+
                 WriteLogMessage ($"Transport Connected, Client: {clientID}", ConsoleColor.Cyan);
                 _currentConnections.Add (clientID);
                 _relay.ClientConnected (clientID);
@@ -54,6 +60,7 @@ namespace LightReflectiveMirror {
             transport.OnServerDisconnected = (clientID) => {
                 WriteLogMessage ($"Transport disconnected, Client: {clientID}", ConsoleColor.Cyan);
                 _currentConnections.Remove (clientID);
+                RemoveConnectionAddress (clientID);
                 _relay.HandleDisconnect (clientID);
 
                 if (NATConnections.ContainsKey (clientID))

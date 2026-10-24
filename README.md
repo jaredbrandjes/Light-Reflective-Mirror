@@ -112,6 +112,10 @@ UpdateHeartbeatInterval - the amounts of update calls before sending a heartbeat
 
 MaxServerNameLength / MaxServerDataLength - Room names and Extra Server Data are published on the server list, so the relay cuts them to these lengths in characters (64 and 1024 by default). Set to 0 for no limit.
 
+AuthenticationTimeout - Milliseconds a client has to send the auth key after connecting before the relay drops it. 10000 by default, 0 disables.
+
+MaxConnectionsPerIP - How many connections the relay accepts from one IP. 32 by default, 0 disables. Players behind the same router share an IP, so raise it for LAN events. **Behind a reverse proxy (for example nginx in front of SimpleWebTransport) every client has the proxy's IP, so set it to 0.**
+
 ## Compatibility Matrix
 
 | Component | Original LRM | Speidy674 V14 | This Release (V16) |

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using LightReflectiveMirror.Endpoints;
 
 namespace LightReflectiveMirror {
@@ -8,7 +9,7 @@ namespace LightReflectiveMirror {
         /// </summary>
         /// <param name="clientId">The ID of the client who connected.</param>
         public void ClientConnected (int clientId) {
-            _pendingAuthentication.Add (clientId);
+            _pendingAuthentication[clientId] = DateTime.UtcNow;
             var buffer = _sendBuffers.Rent (1);
             int pos = 0;
             buffer.WriteByte (ref pos, (byte) OpCodes.AuthenticationRequest);
@@ -30,11 +31,13 @@ namespace LightReflectiveMirror {
 
                 OpCodes opcode = (OpCodes) data.ReadByte (ref pos, end);
 
-                if (_pendingAuthentication.Contains (clientId)) {
-                    if (opcode == OpCodes.AuthenticationResponse) {
+                if (!_authenticatedClients.Contains (clientId)) {
+                    if (_pendingAuthentication.ContainsKey (clientId) && opcode == OpCodes.AuthenticationResponse) {
                         string authResponse = data.ReadString (ref pos, end);
+                        _pendingAuthentication.Remove (clientId);
+
                         if (authResponse == Program.conf.AuthenticationKey) {
-                            _pendingAuthentication.Remove (clientId);
+                            _authenticatedClients.Add (clientId);
                             int writePos = 0;
                             var sendBuffer = _sendBuffers.Rent (1);
                             sendBuffer.WriteByte (ref writePos, (byte) OpCodes.Authenticated);
@@ -126,6 +129,27 @@ namespace LightReflectiveMirror {
         /// Invoked when a client disconnects from the relay.
         /// </summary>
         /// <param name="clientId">The ID of the client who disconnected</param>
-        public void HandleDisconnect (int clientId) => LeaveRoom (clientId);
+        public void HandleDisconnect (int clientId) {
+            _pendingAuthentication.Remove (clientId);
+            _authenticatedClients.Remove (clientId);
+            LeaveRoom (clientId);
+        }
+
+        /// <summary>
+        /// Disconnects clients that connected but never sent the auth key
+        /// within AuthenticationTimeout, so idle connections cannot pile up.
+        /// </summary>
+        public void DisconnectUnauthenticatedClients () {
+            if (Program.conf.AuthenticationTimeout <= 0)
+                return;
+
+            DateTime cutoff = DateTime.UtcNow.AddMilliseconds (-Program.conf.AuthenticationTimeout);
+
+            // copied: ServerDisconnect can call HandleDisconnect, which edits the dictionary
+            foreach (int clientId in _pendingAuthentication.Where (x => x.Value < cutoff).Select (x => x.Key).ToList ()) {
+                Program.WriteLogMessage ($"Client {clientId} did not authenticate in time! Removing from LRM node.");
+                Program.transport.ServerDisconnect (clientId);
+            }
+        }
     }
 }
