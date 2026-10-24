@@ -35,15 +35,15 @@ namespace LightReflectiveMirror {
             Room room = new () {
                 hostId = clientId,
                 maxPlayers = maxPlayers,
-                serverName = serverName,
+                serverName = Truncate (serverName, Program.conf.MaxServerNameLength),
                 isPublic = isPublic,
-                serverData = serverData,
+                serverData = Truncate (serverData, Program.conf.MaxServerDataLength),
                 appId = appId,
-                version = version,
+                version = Truncate (version, MaxShortFieldLength),
                 clients = new List<int> (),
                 serverId = GetRandomServerID (),
                 hostIP = hostIP,
-                hostLocalIP = hostLocalIP,
+                hostLocalIP = Truncate (hostLocalIP, MaxShortFieldLength),
                 supportsDirectConnect = hostIP != null && useDirectConnect,
                 port = port,
                 useNATPunch = useNatPunch,
@@ -181,8 +181,10 @@ namespace LightReflectiveMirror {
         /// <param name="requiredHostId">The ID of the client who kicked the client. -1 if the client left on their own terms</param>
         private void LeaveRoom (int clientId, int requiredHostId = -1) {
             for (int i = 0; i < rooms.Count; i++) {
-                // if host left
-                if (rooms[i].hostId == clientId) {
+                // if host left. Only on their own terms: a KickPlayer naming a
+                // host's ID must not reach this branch, or any client could
+                // close any room by kicking its host.
+                if (requiredHostId == -1 && rooms[i].hostId == clientId) {
                     int pos = 0;
                     byte[] sendBuffer = _sendBuffers.Rent (1);
                     sendBuffer.WriteByte (ref pos, (byte) OpCodes.ServerLeft);

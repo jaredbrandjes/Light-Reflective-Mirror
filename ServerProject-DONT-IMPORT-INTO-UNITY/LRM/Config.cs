@@ -22,6 +22,14 @@ namespace LightReflectiveMirror
         public int RandomlyGeneratedIDLength = 5;
 
         //========================
+        // Abuse Limits (0 disables a limit)
+        //========================
+        // Room names and server data are published on the server list, so
+        // longer values are cut to these lengths (in characters).
+        public int MaxServerNameLength = 64;
+        public int MaxServerDataLength = 1024;
+
+        //========================
         // Endpoint REST API Settings
         //========================
         public bool UseEndpoint = true;

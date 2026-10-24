@@ -110,6 +110,8 @@ UpdateLoopTime - The time in miliseconds between calling 'Update' on the transpo
 
 UpdateHeartbeatInterval - the amounts of update calls before sending a heartbeat. By default its 100, which if updateLoopTime is 10, means every (10 * 100 = 1000ms) it will send out a heartbeat.
 
+MaxServerNameLength / MaxServerDataLength - Room names and Extra Server Data are published on the server list, so the relay cuts them to these lengths in characters (64 and 1024 by default). Set to 0 for no limit.
+
 ## Compatibility Matrix
 
 | Component | Original LRM | Speidy674 V14 | This Release (V16) |

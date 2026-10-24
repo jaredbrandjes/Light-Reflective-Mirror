@@ -13,6 +13,9 @@ namespace LightReflectiveMirror
         private Dictionary<string, Room> _cachedRooms = new();
 
         private System.Random _cachedRandom = new();
+
+        // version and local IP have no legitimate reason to be long, and version is published on the server list
+        private const int MaxShortFieldLength = 64;
     }
 
     public enum OpCodes

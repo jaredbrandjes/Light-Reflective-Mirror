@@ -26,12 +26,13 @@ namespace LightReflectiveMirror {
             try {
                 var data = segmentData.Array;
                 int pos = segmentData.Offset;
+                int end = segmentData.Offset + segmentData.Count;
 
-                OpCodes opcode = (OpCodes) data.ReadByte (ref pos);
+                OpCodes opcode = (OpCodes) data.ReadByte (ref pos, end);
 
                 if (_pendingAuthentication.Contains (clientId)) {
                     if (opcode == OpCodes.AuthenticationResponse) {
-                        string authResponse = data.ReadString (ref pos);
+                        string authResponse = data.ReadString (ref pos, end);
                         if (authResponse == Program.conf.AuthenticationKey) {
                             _pendingAuthentication.Remove (clientId);
                             int writePos = 0;
@@ -52,16 +53,16 @@ namespace LightReflectiveMirror {
                 switch (opcode) {
                     case OpCodes.CreateRoom:
                         try {
-                            int _maxPlayers = data.ReadInt (ref pos);
-                            string _serverName = data.ReadString (ref pos);
-                            bool _isPublic = data.ReadBool (ref pos);
-                            string _serverData = data.ReadString (ref pos);
-                            bool _useDirectConnect = data.ReadBool (ref pos);
-                            string _hostLocalIP = data.ReadString (ref pos);
-                            bool _useNatPunch = data.ReadBool (ref pos);
-                            int _port = data.ReadInt (ref pos);
-                            int _appId = data.ReadInt (ref pos);
-                            string _version = data.ReadString (ref pos);
+                            int _maxPlayers = data.ReadInt (ref pos, end);
+                            string _serverName = data.ReadString (ref pos, end);
+                            bool _isPublic = data.ReadBool (ref pos, end);
+                            string _serverData = data.ReadString (ref pos, end);
+                            bool _useDirectConnect = data.ReadBool (ref pos, end);
+                            string _hostLocalIP = data.ReadString (ref pos, end);
+                            bool _useNatPunch = data.ReadBool (ref pos, end);
+                            int _port = data.ReadInt (ref pos, end);
+                            int _appId = data.ReadInt (ref pos, end);
+                            string _version = data.ReadString (ref pos, end);
 
                             CreateRoom (clientId, _maxPlayers, _serverName, _isPublic, _serverData,
                                 _useDirectConnect, _hostLocalIP, _useNatPunch, _port, _appId, _version);
@@ -78,19 +79,19 @@ namespace LightReflectiveMirror {
                         LeaveRoom (clientId);
                         break;
                     case OpCodes.JoinServer:
-                        string _serverId = data.ReadString (ref pos);
-                        bool canDirectConnect = data.ReadBool (ref pos);
-                        string localIP = data.ReadString (ref pos);
+                        string _serverId = data.ReadString (ref pos, end);
+                        bool canDirectConnect = data.ReadBool (ref pos, end);
+                        string localIP = data.ReadString (ref pos, end);
 
                         JoinRoom (clientId, _serverId, canDirectConnect, localIP);
                         Program.WriteLogMessage ($"Client [{clientId}] [{opcode}] [{_serverId}] | Rooms [{string.Join (',', _cachedRooms.Keys)}]");
                         break;
                     case OpCodes.KickPlayer:
-                        LeaveRoom (data.ReadInt (ref pos), clientId);
+                        LeaveRoom (data.ReadInt (ref pos, end), clientId);
                         Program.WriteLogMessage ($"Client [{clientId}] [{opcode}]");
                         break;
                     case OpCodes.SendData:
-                        ProcessData (clientId, data.ReadBytes (ref pos), channel, data.ReadInt (ref pos));
+                        ProcessData (clientId, data.ReadBytes (ref pos, end), channel, data.ReadInt (ref pos, end));
                         break;
                     case OpCodes.UpdateRoomData:
                         Program.WriteLogMessage ($"Client [{clientId}] [{opcode}] | Rooms [{string.Join (',', _cachedRooms.Keys)}]");
@@ -99,17 +100,17 @@ namespace LightReflectiveMirror {
                         if (plyRoom == null || plyRoom.hostId != clientId)
                             return;
 
-                        if (data.ReadBool (ref pos))
-                            plyRoom.serverName = data.ReadString (ref pos);
+                        if (data.ReadBool (ref pos, end))
+                            plyRoom.serverName = Truncate (data.ReadString (ref pos, end), Program.conf.MaxServerNameLength);
 
-                        if (data.ReadBool (ref pos))
-                            plyRoom.serverData = data.ReadString (ref pos);
+                        if (data.ReadBool (ref pos, end))
+                            plyRoom.serverData = Truncate (data.ReadString (ref pos, end), Program.conf.MaxServerDataLength);
 
-                        if (data.ReadBool (ref pos))
-                            plyRoom.isPublic = data.ReadBool (ref pos);
+                        if (data.ReadBool (ref pos, end))
+                            plyRoom.isPublic = data.ReadBool (ref pos, end);
 
-                        if (data.ReadBool (ref pos))
-                            plyRoom.maxPlayers = data.ReadInt (ref pos);
+                        if (data.ReadBool (ref pos, end))
+                            plyRoom.maxPlayers = data.ReadInt (ref pos, end);
 
                         Endpoint.RoomsModified ();
                         break;

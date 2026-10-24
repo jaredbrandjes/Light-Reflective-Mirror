@@ -24,11 +24,11 @@ namespace LightReflectiveMirror
                 pos = 0;
                 try
                 {
-                    isConnectionEstablished = readData.ReadBool(ref pos);
+                    isConnectionEstablished = readData.ReadBool(ref pos, readData.Length);
 
                     if (isConnectionEstablished)
                     {
-                        connectionID = readData.ReadString(ref pos);
+                        connectionID = readData.ReadString(ref pos, readData.Length);
 
                         if (_pendingNATPunches.TryGetBySecond(connectionID, out pos))
                         {

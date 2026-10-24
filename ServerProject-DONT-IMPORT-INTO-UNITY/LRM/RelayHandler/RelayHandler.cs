@@ -17,6 +17,20 @@ namespace LightReflectiveMirror {
         /// <returns></returns>
         private bool DoesServerIdExist (string id) => _cachedRooms.ContainsKey (id);
 
+        /// <summary>
+        /// Cuts a client supplied string down to maxLength characters. 0 means no limit.
+        /// </summary>
+        private static string Truncate (string value, int maxLength) {
+            if (value == null || maxLength <= 0 || value.Length <= maxLength)
+                return value;
+
+            // don't cut an emoji or other surrogate pair in half, the server list would show a broken char
+            if (char.IsHighSurrogate (value[maxLength - 1]))
+                maxLength--;
+
+            return value.Substring (0, maxLength);
+        }
+
         private string GenerateRoomID () {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             var randomID = "";

@@ -37,6 +37,8 @@ namespace LightReflectiveMirror {
                     conf.UpdateLoopTime = int.Parse (Environment.GetEnvironmentVariable ("UPDATE_LOOP_TIME") ?? "10");
                     conf.UpdateHeartbeatInterval = int.Parse (Environment.GetEnvironmentVariable ("UPDATE_HEARTBEAT_INTERVAL") ?? "100");
                     conf.RandomlyGeneratedIDLength = int.Parse (Environment.GetEnvironmentVariable ("RANDOMLY_GENERATED_ID_LENGTH") ?? "5");
+                    conf.MaxServerNameLength = int.Parse (Environment.GetEnvironmentVariable ("MAX_SERVER_NAME_LENGTH") ?? "64");
+                    conf.MaxServerDataLength = int.Parse (Environment.GetEnvironmentVariable ("MAX_SERVER_DATA_LENGTH") ?? "1024");
                     conf.UseEndpoint = bool.Parse (Environment.GetEnvironmentVariable ("USE_ENDPOINT") ?? "true");
                     conf.EndpointPort = ushort.Parse (Environment.GetEnvironmentVariable ("ENDPOINT_PORT") ?? "8080");
                     conf.EndpointServerList = bool.Parse (Environment.GetEnvironmentVariable ("ENDPOINT_SERVERLIST") ?? "true");
